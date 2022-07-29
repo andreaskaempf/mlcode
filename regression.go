@@ -12,7 +12,8 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func main() {
+// Function to demonstrate linear regression
+func linear_regression_demo() {
 
 	// Read data, convert to matrix
 	m, h := readMatrixCSV("data/pizza_3_vars.txt")
@@ -25,7 +26,7 @@ func main() {
 	Y := extractCols(m, 3, 3) // just the last col
 
 	// Train linear regression model
-	w := trainRegression(X, Y, .001, .001)
+	w := trainRegression(X, Y, .001, .001, true)
 	fmt.Println("\nFinal coefficients:")
 	matPrint(w)
 }
@@ -33,7 +34,7 @@ func main() {
 // Train linear regression model using gradient descent on coeffients,
 // until loss stops improving by at least the tolerance. Return vector
 // of coefficients.
-func trainRegression(X, Y *mat.Dense, lr, tol float64) *mat.Dense {
+func trainRegression(X, Y *mat.Dense, lr, tol float64, verbose bool) *mat.Dense {
 
 	// Initialize weights/coefficients to zero (a column vector, with length =
 	// number of columns in X)
@@ -53,10 +54,14 @@ func trainRegression(X, Y *mat.Dense, lr, tol float64) *mat.Dense {
 			fmt.Println("Loss cannot be computed")
 			break
 		}
-		fmt.Printf("Iteration %d: loss = %f\n", i, l)
+		if verbose {
+			fmt.Printf("Iteration %d: loss = %f\n", i, l)
+		}
 		if i > 0 && math.Abs(prevLoss-l) < tol {
-			fmt.Println("Solution found")
-			break
+			if verbose {
+				fmt.Println("Solution found")
+			}
+			return w
 		}
 
 		// Remember loss for next iteration
@@ -68,7 +73,9 @@ func trainRegression(X, Y *mat.Dense, lr, tol float64) *mat.Dense {
 		grads.Scale(lr, grads)
 		w.Sub(w, grads)
 	}
-	return w
+
+	// If no solution found, return nil pointer
+	return nil
 }
 
 // Predict Y values (one column), given X values (one column per variable) and
