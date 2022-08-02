@@ -5,5 +5,6 @@
 package main
 
 func main() {
-	linear_regression_demo()
+	//linear_regression_demo()
+	logistic_regression_demo()
 }

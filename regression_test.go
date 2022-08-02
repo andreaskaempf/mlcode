@@ -16,7 +16,7 @@ func TestLinearRegression(t *testing.T) {
 	Y := extractCols(m, 3, 3) // just the last col
 
 	// Train linear regression model, test coefficients
-	w := trainRegression(X, Y, .001, .001, false)
+	w := trainLinRegr(X, Y, .001, .001, false)
 	r, c := w.Dims()
 	if r != 3 || c != 1 {
 		t.Error("Linear regression failed: write size returned")
