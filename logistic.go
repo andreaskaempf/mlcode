@@ -31,46 +31,31 @@ func logistic_regression_demo() {
 	matPrint(Y)
 
 	// Train linear regression model
-	w := trainLogRegr(X, Y, .001, .000000001, true)
+	w := trainLogRegr(X, Y, .001, 1000, true)
 	fmt.Println("\nFinal coefficients:")
 	matPrint(w)
 
 }
 
-func trainLogRegr(X, Y *mat.Dense, lr, tol float64, verbose bool) *mat.Dense {
+func trainLogRegr(X, Y *mat.Dense, lr float64, iters int, verbose bool) *mat.Dense {
 
 	// Initialize weights/coefficients to zero (a column vector, with length =
 	// number of columns in X)
 	_, c := X.Dims()
 	w := mat.NewDense(c, 1, nil) // Python: np.zeros((X.shape[1], 1))
 
-	// Initialize the previous loss, so we can detect when we are converging
-	prevLoss := 0.0
-
 	// Just repeat for given number of interations
-	for i := 0; i < 1000000; i++ { // max iterations, adjust if necessary
+	for i := 0; i < iters; i++ {
 
 		l := lossLogRegr(X, Y, w)
-		if math.IsNaN(l) {
-			fmt.Println("Loss cannot be computed")
-			break
-		}
 		if verbose {
 			fmt.Printf("Iteration %d: loss = %f\n", i, l)
 		}
-		if i > 0 && math.Abs(prevLoss-l) < tol {
-			if verbose {
-				fmt.Println("Solution found")
-			}
-			return w
-		}
-
-		// Remember loss for next iteration
-		prevLoss = l
 
 		// Adjust the weights (coefficients) using the gradients
 		// Python: w -= gradient(X, Y, w) * lr
 		grads := gradientLogReg(X, Y, w)
+
 		grads.Scale(lr, grads)
 		w.Sub(w, grads)
 	}
@@ -151,6 +136,7 @@ func gradientLogReg(X, Y, w *mat.Dense) *mat.Dense {
 
 	// Apply "2 * and / X.shape[0]" by scaling by: 2 / nrows
 	// Python: 2 * ... / X.shape[0]
-	res.Scale(2.0/float64(xr), res)
+	//res.Scale(2.0/float64(xr), res)
+	res.Scale(1.0/float64(xr), res)  // No, don't multiply by 2
 	return res
 }

@@ -3,7 +3,7 @@
 package main
 
 import (
-	"math"
+	//"math"
 	"testing"
 )
 
@@ -25,23 +25,3 @@ func TestLinearRegression(t *testing.T) {
 	}
 }
 
-// Test whether two lists of floats are the same
-func same(A, B []float64) bool {
-	if len(A) != len(B) {
-		return false
-	}
-	for i := 0; i < len(A); i++ {
-		if !close(A[i], B[i]) {
-			return false
-		}
-	}
-	return true
-}
-
-// Test whether two numbers are close
-func close(a, b float64) bool {
-	if a == 0 && b == 0 {
-		return true
-	}
-	return math.Abs(a-b)/((a+b)/2.0) < .001
-}

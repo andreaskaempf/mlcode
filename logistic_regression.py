@@ -12,20 +12,9 @@ def classify(X, w):
     return np.round(forward(X, w))
 
 def loss(X, Y, w):
-
-    #print('*** loss:\nX =', X, X.shape)
-    #print('Y =', Y, Y.shape)
-    #print('w =', w, w.shape)
-
     y_hat = forward(X, w)
-    #print('y_hat =', y_hat, y_hat.shape)
-
     t1 = Y * np.log(y_hat)
-    #print('t1 =', t1, t1.shape)
-
     t2 = (1 - Y) * np.log(1 - y_hat)
-    #print('t2 =', t2, t2.shape)
-
     return -np.average(t1 + t2)
 
 def gradient(X, Y, w):
@@ -58,8 +47,8 @@ print('X =', X)
 print('Y =', Y)
 
 # Train model
-w = train(X, Y, iterations=10000, lr=0.001)
+w = train(X, Y, iterations=1000, lr=0.001)
 print(w)
 
-# Test it
+# Test accuracy
 test(X, Y, w)
