@@ -136,7 +136,8 @@ func (m *LinearRegression) gradient(X, Y *mat.Dense) *mat.Dense {
 }
 
 // Test/demo linear regression
-func main() {
+func linear_regression_demo() {
+//func main() {
 
     // Read data, split into X & Y
 	data, _ := readMatrixCSV("data/pizza_3_vars.txt")

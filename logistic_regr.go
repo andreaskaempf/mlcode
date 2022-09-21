@@ -2,6 +2,15 @@
 //
 // Based on Python implementation in Chapter 5 of "Programming Machine
 // Learning" by Paolo Perrotta
+//
+// Sample usage:
+//	data, _ := readMatrixCSV("data/police.txt")
+//	X := extractCols(data, 0, 2) // all cols except last
+//	Y := extractCols(data, 3, 3) // just the last col
+//  m := LogisticRegression{} // create model object
+//  m.verbose = true  // set an attribute
+//	m.train(X, Y) // train the model
+//	matPrint(m.w)  // show resulting coefficients
 
 package main
 
@@ -12,55 +21,50 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-
-// Function to demonstrate logistic regression
-func logistic_regression_demo() {
-
-	// Read data, convert to matrix
-	m, _ := readMatrixCSV("data/police.txt")
-	//fmt.Println("Headings:", h)
-	//fmt.Println("Data =")
-	matPrint(m)
-
-	// Separate matrices for X and Y
-	X := extractCols(m, 0, 2) // all cols except last
-	Y := extractCols(m, 3, 3) // just the last col
-	fmt.Println("X =")
-	matPrint(X)
-	fmt.Println("Y =")
-	matPrint(Y)
-
-	// Train linear regression model
-	w := trainLogRegr(X, Y, .001, 1000, true)
-	fmt.Println("\nFinal coefficients:")
-	matPrint(w)
-
+// Structure for a logistic regression model
+type LogisticRegression struct {
+    lr float64  // learning rate, default .001
+    tol float64  // tolerance to stop training, default .001
+    iterations int // max iterations, default 1000
+    verbose bool  // messages during train, default false
+    w *mat.Dense // vector of weights, set during training
 }
 
-func trainLogRegr(X, Y *mat.Dense, lr float64, iters int, verbose bool) *mat.Dense {
+// Train a logistic regression model
+func (m *LogisticRegression) train(X, Y *mat.Dense) {
 
 	// Initialize weights/coefficients to zero (a column vector, with length =
 	// number of columns in X)
 	_, c := X.Dims()
-	w := mat.NewDense(c, 1, nil) // Python: np.zeros((X.shape[1], 1))
+	m.w = mat.NewDense(c, 1, nil) // Python: np.zeros((X.shape[1], 1))
+
+    // Set other model parameters if not set yet
+    if m.iterations <= 0 {
+        m.iterations = 1000
+    }
+    if m.lr <= 0 || m.lr >= 1 {
+        m.lr = .001
+    }
+    if m.tol <= 0 || m.tol >= 1 {
+        m.tol = .001
+    }
 
 	// Just repeat for given number of interations
-	for i := 0; i < iters; i++ {
+	for i := 0; i < m.iterations; i++ {
 
-		l := lossLogRegr(X, Y, w)
-		if verbose {
+        // Calculate loss
+		l := m.loss(X, Y)
+		if m.verbose {
 			fmt.Printf("Iteration %d: loss = %f\n", i, l)
 		}
 
 		// Adjust the weights (coefficients) using the gradients
 		// Python: w -= gradient(X, Y, w) * lr
-		grads := gradientLogReg(X, Y, w)
-
-		grads.Scale(lr, grads)
-		w.Sub(w, grads)
+		grads := m.gradient(X, Y)
+		grads.Scale(m.lr, grads)
+		m.w.Sub(m.w, grads)
 	}
 
-	return w
 }
 
 // The sigmoid function
@@ -70,12 +74,12 @@ func sigmoid(z float64) float64 {
 
 // Forward prediction given X values and weights (coefficients)
 // Python: sigmoid(np.matmul(X, w))
-func forward(X, w *mat.Dense) *mat.Dense {
+func (m *LogisticRegression) forward(X *mat.Dense) *mat.Dense {
 
 	// weighted_sum = np.matmul(X, w)
 	xr, _ := X.Dims()
 	res := mat.NewDense(xr, 1, nil)
-	res.Mul(X, w)
+	res.Mul(X, m.w)
 
 	// return sigmoid(weighted_sum) -- must be vectorized
 	res.Apply(func(i, j int, v float64) float64 {
@@ -87,25 +91,23 @@ func forward(X, w *mat.Dense) *mat.Dense {
 // Predict (classify) given matrix of features and vector of weights
 // (coefficients)
 // Python: np.round(forward(X, w))
-func classify(X, w *mat.Dense) *mat.Dense {
-	preds := forward(X, w)
+func (m *LogisticRegression) classify(X *mat.Dense) *mat.Dense {
+	preds := m.forward(X)
 	preds.Apply(func(i, j int, v float64) float64 {
 		return math.Round(v)
 	}, preds)
 	return preds
 }
 
-// Calculate loss function for predictions vs. actual values, for logistic
-// regression
-func lossLogRegr(X, Y, w *mat.Dense) float64 {
+// Calculate loss function for predictions vs. actual values
+func (m *LogisticRegression) loss(X, Y *mat.Dense) float64 {
 
 	// Calculate predictions
 	// Python: y_hat = forward(X, w)
 	// where X: 30x3, Y: 30x1, w: 3x1
-	y_hat := forward(X, w) // 30x1
+	y_hat := m.forward(X) // 30x1
 
-	// Calculate average loss, using direct calculation
-	// rather than operations on matrices.
+	// Calculate average loss, using direct calculation rather than operations on matrices.
 	// Python:
 	//   first_term = Y * np.log(y_hat)
 	//   second_term = (1 - Y) * np.log(1 - y_hat)
@@ -121,11 +123,11 @@ func lossLogRegr(X, Y, w *mat.Dense) float64 {
 
 // Compute the gradient for logistic regression
 // Python: return 2 * np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
-func gradientLogReg(X, Y, w *mat.Dense) *mat.Dense {
+func (m *LogisticRegression) gradient(X, Y *mat.Dense) *mat.Dense {
 
 	// Get differences of predictions vs. actual
 	// Python: (forward(X, w) - Y))
-	deltas := forward(X, w)
+	deltas := m.forward(X)
 	deltas.Sub(deltas, Y)
 
 	// Multiply transposed X by the deltas
@@ -140,3 +142,28 @@ func gradientLogReg(X, Y, w *mat.Dense) *mat.Dense {
 	res.Scale(1.0/float64(xr), res)  // No, don't multiply by 2
 	return res
 }
+
+// Function to demonstrate logistic regression
+func logistic_regression_demo() {
+
+	// Read data into matrix, separate X and Y
+	data, _ := readMatrixCSV("data/police.txt")
+	X := extractCols(data, 0, 2) // all cols except last
+	Y := extractCols(data, 3, 3) // just the last col
+	fmt.Println("X =")
+	matPrint(X)
+	fmt.Println("Y =")
+	matPrint(Y)
+
+	// Train logistic regression model
+    m := LogisticRegression{}
+    m.verbose = true
+	m.train(X, Y)
+	fmt.Println("\nFinal coefficients:")
+	matPrint(m.w)
+}
+
+func main() {
+    logistic_regression_demo()
+}
+
