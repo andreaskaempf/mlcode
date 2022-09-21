@@ -8,7 +8,9 @@ import pandas as pd  # only for reading data
 # Read data
 # Columns: Reservations, Temp, Tourists, Pizzas
 #data = np.loadtxt('pizza_3_vars.txt', skiprows = 1)
-data = pd.read_csv('pizza_3_vars.txt').values
+data = pd.read_csv('data/pizza_3_vars.txt').values
+
+data = data[:5, :]   # just the first 5 rows
 
 # Split into X and Y
 X = data[:,:3]

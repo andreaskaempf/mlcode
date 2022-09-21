@@ -3,25 +3,28 @@
 package main
 
 import (
-	//"math"
+    "fmt"
 	"testing"
+
+	"gonum.org/v1/gonum/mat"
 )
 
 // Test complete multivariate linear regression example
 func TestLinearRegression(t *testing.T) {
 
-	// Read data into matrix, separate X and Y
-	m, _ := readMatrixCSV("data/pizza_3_vars.txt")
-	X := extractCols(m, 0, 2) // all cols except last
-	Y := extractCols(m, 3, 3) // just the last col
+    // Create test data, and expected output
+	X := mat.NewDense(5, 3, []float64{13, 26, 9, 2, 14, 6, 14, 20, 3, 23, 25, 9, 13, 24, 8})
+	Y := mat.NewDense(5, 1, []float64{44, 23, 28, 60, 42})
+    expect := mat.NewDense(3, 1, []float64{1.3586, -0.02001, 3.1468})
 
-	// Train linear regression model, test coefficients
+	// Train linear regression model, check if coefficients match
 	w := trainLinRegr(X, Y, .001, .001, false)
-	r, c := w.Dims()
-	if r != 3 || c != 1 {
-		t.Error("Linear regression failed: write size returned")
-	} else if !(close(w.At(0, 0), 1.1375) && close(w.At(1, 0), 0.1834) && close(w.At(2, 0), 3.0191)) {
-		t.Error("Linear regression failed: wrong coefficients")
+	if !matSame(w, expect) {
+        fmt.Println("Linear regression: got")
+        matPrint(w)
+        fmt.Println("instead of")
+        matPrint(expect)
+		t.Error("Linear regression failed")
 	}
 }
 
