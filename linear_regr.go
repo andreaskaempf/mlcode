@@ -1,7 +1,14 @@
 // Linear Regression
 //
 // Based on Python implementation in Chapters 2-4 of "Programming Machine
-// Learning" by Paolo Perrotta
+// Learning" by Paolo Perrotta.
+//
+// Sample usage (also see unit test file):
+//	m, _ := readMatrixCSV("data/pizza_3_vars.txt")
+//	X := extractCols(m, 0, 2) // all cols except last
+//	Y := extractCols(m, 3, 3) // just the last col
+//	w := trainLinRegr(X, Y, .001, .001, true)
+//	matPrint(w) // prints final coefficients
 
 package main
 
@@ -11,25 +18,6 @@ import (
 
 	"gonum.org/v1/gonum/mat"
 )
-
-// Function to demonstrate linear regression
-func linear_regression_demo() {
-
-	// Read data, convert to matrix
-	m, h := readMatrixCSV("data/pizza_3_vars.txt")
-	fmt.Println("Headings:", h)
-	fmt.Println("Data =")
-	matPrint(m)
-
-	// Separate matrices for X and Y
-	X := extractCols(m, 0, 2) // all cols except last
-	Y := extractCols(m, 3, 3) // just the last col
-
-	// Train linear regression model
-	w := trainLinRegr(X, Y, .001, .001, true)
-	fmt.Println("\nFinal coefficients:")
-	matPrint(w)
-}
 
 // Train linear regression model using gradient descent on coeffients,
 // until loss stops improving by at least the tolerance. Returns vector
