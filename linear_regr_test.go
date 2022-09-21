@@ -17,11 +17,12 @@ func TestLinearRegression(t *testing.T) {
 	Y := mat.NewDense(5, 1, []float64{44, 23, 28, 60, 42})
     expect := mat.NewDense(3, 1, []float64{1.3586, -0.02001, 3.1468})
 
-	// Train linear regression model, check if coefficients match
-	w := trainLinRegr(X, Y, .001, .001, false)
-	if !matSame(w, expect) {
+	// Create and train linear regression model, check if coefficients match
+    m := LinearRegression{}
+	m.train(X, Y)
+	if !matSame(m.w, expect) {
         fmt.Println("Linear regression: got")
-        matPrint(w)
+        matPrint(m.w)
         fmt.Println("instead of")
         matPrint(expect)
 		t.Error("Linear regression failed")
