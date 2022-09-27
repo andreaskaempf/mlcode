@@ -163,7 +163,7 @@ func logistic_regression_demo() {
 	matPrint(m.w)
 }
 
-func main() {
+/*func main() {
     logistic_regression_demo()
-}
+} */
 

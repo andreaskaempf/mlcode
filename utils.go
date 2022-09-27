@@ -1,10 +1,10 @@
 // Utility functions, mainly for testing
 
-
 package main
 
 import (
 	"math"
+
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -31,18 +31,27 @@ func same(A, B []float64) bool {
 
 // Determine if two matrices are the same (or at least close)
 func matSame(A, B mat.Matrix) bool {
-    ar, ac := A.Dims()
-    br, bc := B.Dims()
-    if ar != br || ac != bc {
-        return false
-    }
-    for i := 0; i < ar; i++ {
-        for j := 0; j < ac; j++ {
-            if ! close(A.At(i, j), B.At(i, j)) {
-                return false
-            }
-        }
-    }
-    return true
+	ar, ac := A.Dims()
+	br, bc := B.Dims()
+	if ar != br || ac != bc {
+		return false
+	}
+	for i := 0; i < ar; i++ {
+		for j := 0; j < ac; j++ {
+			if !close(A.At(i, j), B.At(i, j)) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
+// Convert a slice of bytes to a slice of floats
+func bytesToFloats(bb []byte) []float64 {
+	nb := len(bb)
+	ff := make([]float64, nb, nb)
+	for i := 0; i < nb; i++ {
+		ff[i] = float64(bb[i])
+	}
+	return ff
+}
