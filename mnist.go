@@ -1,5 +1,9 @@
 // Logistic regression on MNIST digits data, achieves 95% accuracy on
-// identifying the digit 5 (but 10/90 imbalanced data set)
+// identifying the digit 5 (but 10/90 imbalanced data set).
+//
+// The data files can be downloaded from http://yann.lecun.com/exdb/mnist/
+// and should be stored in data/mnist under the current directory, in their
+// original gzipped state.
 //
 // AK, 27/09/2022
 
