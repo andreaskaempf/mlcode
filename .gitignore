@@ -4,3 +4,4 @@ go.sum
 book_code
 data/mnist
 *.pdf
+__pycache__

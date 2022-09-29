@@ -55,3 +55,13 @@ func bytesToFloats(bb []byte) []float64 {
 	}
 	return ff
 }
+
+// Simple if-then-else operator, like a?b:c in C,
+// return a if condition is true, otherwise returns b
+func ifThenElse(cond bool, a, b float64) float64 {
+	if cond {
+		return a
+	} else {
+		return b
+	}
+}

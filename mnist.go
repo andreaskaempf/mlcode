@@ -58,24 +58,35 @@ func main() {
 		pics1.SetRow(r, nums)
 	}
 
-	// Convert labels to 1 if 5, 0 otherwise
+	// For multi-class, one-hot-encode the digits, so there is one row per
+	// label, and 10 columns, one for each possible digit 0-9
+	labsMulti := mat.NewDense(len(labs), 10, nil)
+	for i := 0; i < len(labs); i++ {
+		labsMulti.Set(i, int(labs[i]), 1)
+	}
+
+	// For binary classifier, convert labels to 1 if 5 or 0 otherwise
+	// labs[i] = ifThenElse(labs[i] == 5, 1, 0)
+	labs1 := mat.NewDense(len(labs), 1, nil)
 	for i := 0; i < len(labs); i++ {
 		if labs[i] == 5 {
-			labs[i] = 1
-		} else {
-			labs[i] = 0
+			labs1.Set(i, 0, 1)
 		}
 	}
 
-	// Convert labels (slice of floats) to n X 1 matrix
-	labs1 := mat.NewDense(len(labs), 1, labs)
+	// Create binary logistic regression model, set parameters
+	//m := LogisticRegression{}
+	//m.iterations = 100 // 1000 iterations gets to loss .211
+	//m.lr = .00001      // need .00002 or smaller to converge
+	//m.verbose = true   // to show running loss value
 
-	// Train logistic regression model on image data
-	m := LogisticRegression{}
-	m.iterations = 1000 // 1000 iterations gets to loss .211
-	m.lr = .00002       // need .00002 or smaller to converge
-	m.verbose = true    // to show running loss value
-	m.train(pics1, labs1)
+	// Train binary classifier logistic regression model on image data with 1/0 labels
+	//m.train(pics1, labs1)
+
+	// Train multi-class classifier using 10-column one-hot encoded labels
+	m := MultiLogRegression{iterations: 20000, lr: .000001, verbose: true}
+	m.train(pics1, labsMulti)
+
 	//fmt.Println("\nFinal coefficients:")
 	//matPrint(m.w)
 
@@ -85,16 +96,15 @@ func main() {
 	// Measure simple accuracy
 	var ok, n int
 	for i := 0; i < len(pics); i++ {
-		//fmt.Printf("actual = %f, pred = %f\n", labs1.At(i, 0), preds.At(i, 0))
 		n += 1
-		if labs1.At(i, 0) == preds.At(i, 0) {
+		if labsMulti.At(i, 0) == preds.At(i, 0) {
 			ok += 1
 		}
 	}
 	fmt.Printf("Accuracy = %f\n", float64(ok)/float64(n))
 }
 
-// Read MNIST images file
+// Read MNIST images file, returns a slice of 28x28 matrices
 func readMNISTIMages(filename string) []mat.Dense {
 
 	// Images go into an array
@@ -155,7 +165,7 @@ func readMNISTIMages(filename string) []mat.Dense {
 	return pics
 }
 
-// Read MNIST labels file
+// Read MNIST labels file, returns a slice of floats
 func readMNISTLabels(filename string) []float64 {
 
 	// Images go into an array
