@@ -24,7 +24,15 @@ def loss(X, Y, w):
 
 
 def gradient(X, Y, w):
-    return np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
+    #return np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
+    #f = forward(X, w)
+    #print('forward called from gradient:', f.shape)
+    #print(f)
+
+    g = np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
+    #print('Gradient', g.shape)
+    #print(g)
+    return g
 
 
 def report(iteration, X_train, Y_train, X_test, Y_test, w):
@@ -32,7 +40,7 @@ def report(iteration, X_train, Y_train, X_test, Y_test, w):
     n_test_examples = Y_test.shape[0]
     matches = matches * 100.0 / n_test_examples
     training_loss = loss(X_train, Y_train, w)
-    print("%d - Loss: %.20f, %.2f%%" % (iteration, training_loss, matches))
+    print("Iteration %d - loss: %.20f, %.2f%%" % (iteration, training_loss, matches))
 
 
 def train(X_train, Y_train, X_test, Y_test, iterations, lr):
@@ -40,11 +48,15 @@ def train(X_train, Y_train, X_test, Y_test, iterations, lr):
     for i in range(iterations):
         report(i, X_train, Y_train, X_test, Y_test, w)
         w -= gradient(X_train, Y_train, w) * lr
+        #print('weights after adjustment with lr', lr)
+        #print(w)
+
     report(iterations, X_train, Y_train, X_test, Y_test, w)
     return w
 
 
 import mnist as data
+
 w = train(data.X_train, data.Y_train,
           data.X_test, data.Y_test,
-          iterations=200, lr=1e-5)
+          iterations=100, lr=1e-5)

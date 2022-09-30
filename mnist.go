@@ -39,24 +39,34 @@ func main() {
 	// Read training images and labels
 	pics := readMNISTIMages("data/mnist/train-images-idx3-ubyte.gz")
 	labs := readMNISTLabels("data/mnist/train-labels-idx1-ubyte.gz")
-	fmt.Printf("%d images, %d labels read\n", len(pics), len(labs))
+    fmt.Printf("Training data: %d images, %d labels\n", len(pics), len(labs))
 	if len(pics) == 0 || len(labs) == 0 || len(pics) != len(labs) {
-		panic("Bad data")
+		panic("Bad training data")
 	}
 
-	// Add a column of 1s to each image, for bias
-	for i := 0; i < len(pics); i++ {
-		pics[i] = *PrependBias(&pics[i]) // TODO: avoid pointer magic?
+    // Read test data
+	tpics := readMNISTIMages("data/mnist/t10k-images-idx3-ubyte.gz")
+	tlabs := readMNISTLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
+    fmt.Printf("Test data: %d images, %d labels\n", len(tpics), len(tlabs))
+	if len(tpics) == 0 || len(tlabs) == 0 || len(tpics) != len(tlabs) {
+		panic("Bad test data")
 	}
+
+	// For debugging: only the first 10 rows and columns
+	pics = pics[:13]
+	labs = labs[:13]
+	fmt.Printf("%d pics, %d labels\n", len(pics), len(labs))
 
 	// Convert images to a single matrix, one flattened image per row
-	// WARNING: the bias gets repeated for every row, is this okay?
 	ir, ic := pics[0].Dims()
 	pics1 := mat.NewDense(len(pics), ir*ic, nil)
 	for r := 0; r < len(pics); r++ { // copy each image a row
 		nums := MatrixNums(&pics[r])
 		pics1.SetRow(r, nums)
 	}
+
+	// Add a column of 1s, for bias
+	pics1 = PrependBias(pics1) // TODO: can we do this above?
 
 	// For multi-class, one-hot-encode the digits, so there is one row per
 	// label, and 10 columns, one for each possible digit 0-9
@@ -84,20 +94,25 @@ func main() {
 	//m.train(pics1, labs1)
 
 	// Train multi-class classifier using 10-column one-hot encoded labels
-	m := MultiLogRegression{iterations: 20000, lr: .000001, verbose: true}
+	m := MultiLogRegression{iterations: 100, lr: .00001, verbose: true}
 	m.train(pics1, labsMulti)
 
 	//fmt.Println("\nFinal coefficients:")
 	//matPrint(m.w)
 
-	// Predict
+	// Predict, on test data
 	preds := m.classify(pics1)
+    fmt.Println("\nPredictions:")
+    matPrint(preds)
+    fmt.Println("\nActuals:")
+    fmt.Println(labs)
+
 
 	// Measure simple accuracy
 	var ok, n int
 	for i := 0; i < len(pics); i++ {
 		n += 1
-		if labsMulti.At(i, 0) == preds.At(i, 0) {
+		if labs[i] == preds.At(i, 0) {
 			ok += 1
 		}
 	}
@@ -169,7 +184,7 @@ func readMNISTIMages(filename string) []mat.Dense {
 func readMNISTLabels(filename string) []float64 {
 
 	// Images go into an array
-	labs := []float64{}
+	labs := []float64{}  // only used to return empty list, not populated
 
 	// Open raw binary file
 	f, err := os.Open(filename)
@@ -208,9 +223,10 @@ func readMNISTLabels(filename string) []float64 {
 
 	// Read labels into an array of bytes
 	ll := make([]byte, h.N)
-	_, err = fz.Read(ll)
-	if err != nil {
-		fmt.Println("Could not read labels")
+    n, err := fz.Read(ll)
+	if n < int(h.N) || err != nil {
+        fmt.Printf("Could not read labels: %d bytes read\n", n)
+        fmt.Println("Error:", err)
 		return labs
 	}
 

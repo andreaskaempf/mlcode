@@ -53,8 +53,13 @@ func (m *MultiLogRegression) train(X, Y *mat.Dense) {
 		// Adjust the weights (coefficients) using the gradients
 		// Python: w -= gradient(X, Y, w) * lr
 		grads := m.gradient(X, Y)
+		//gr, gc := grads.Dims()
+		//fmt.Printf("Gradient %d x %d:\n", gr, gc)
+		//matPrint(grads)
 		grads.Scale(m.lr, grads)
 		m.w.Sub(m.w, grads)
+		//fmt.Println("Weights after adjustment, lr =", m.lr)
+		//matPrint(m.w)
 	}
 
 }
@@ -112,31 +117,34 @@ func (m *MultiLogRegression) loss(X, Y *mat.Dense) float64 {
 
 	// Calculate predictions
 	// Python: y_hat = forward(X, w)
-	// where X: 30x3, Y: 30x1, w: 3x1
-	y_hat := m.forward(X) // 30x1
+	y_hat := m.forward(X)
 
 	// Calculate average loss, using direct calculation rather than operations on matrices.
 	// Python:
 	//   first_term = Y * np.log(y_hat)
 	//   second_term = (1 - Y) * np.log(1 - y_hat)
-	//   return -np.average(first_term + second_term)
-	// Where: Y 30x1, y_hat 30x1
-	yrows, _ := Y.Dims()
+	//   return -np.sum(first_term + second_term) / X.shape[0]
+	yrows, ycols := Y.Dims()
 	xrows, _ := X.Dims()
 	var result float64
 	for i := 0; i < yrows; i++ {
-		result += Y.At(i, 0)*math.Log(y_hat.At(i, 0)) + (1-Y.At(i, 0))*math.Log(1-y_hat.At(i, 0))
+		for j := 0; j < ycols; j++ {
+			result += Y.At(i, j)*math.Log(y_hat.At(i, j)) + (1-Y.At(i, j))*math.Log(1-y_hat.At(i, j))
+		}
 	}
 	return result / float64(xrows) * -1
 }
 
 // Compute the gradient for logistic regression
-// Python: return 2 * np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
+// Python: return np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
 func (m *MultiLogRegression) gradient(X, Y *mat.Dense) *mat.Dense {
 
 	// Get differences of predictions vs. actual
 	// Python: (forward(X, w) - Y))
 	deltas := m.forward(X)
+	//#rrr, ccc := deltas.Dims()
+	//fmt.Println("forward(X) called from gradient %d x %d\n", rrr, ccc)
+	//matPrint(deltas)
 	deltas.Sub(deltas, Y)
 
 	// Multiply transposed X by the deltas
@@ -146,8 +154,7 @@ func (m *MultiLogRegression) gradient(X, Y *mat.Dense) *mat.Dense {
 	res := mat.NewDense(xc, dc, nil) // TODO: Can we avoid allocating each time?
 	res.Mul(X.T(), deltas)
 
-	// Apply "2 * and / X.shape[0]" by scaling by: 2 / nrows
-	// Python: 2 * ... / X.shape[0]
+	// Divide by number of rows: ... / X.shape[0]
 	res.Scale(1.0/float64(xr), res)
 	return res
 }

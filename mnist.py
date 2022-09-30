@@ -58,3 +58,8 @@ Y_train = one_hot_encode(Y_train_unencoded)
 
 # 10000 labels, each a single digit from 0 to 9
 Y_test = load_labels("data/mnist/t10k-labels-idx1-ubyte.gz")
+
+
+# For debugging, only first 13 rows
+X_train = X_train[:13,:]
+Y_train = Y_train[:13,:]
