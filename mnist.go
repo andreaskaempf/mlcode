@@ -39,22 +39,22 @@ func main() {
 	// Read training images and labels
 	pics := readMNISTIMages("data/mnist/train-images-idx3-ubyte.gz")
 	labs := readMNISTLabels("data/mnist/train-labels-idx1-ubyte.gz")
-    fmt.Printf("Training data: %d images, %d labels\n", len(pics), len(labs))
+	fmt.Printf("Training data: %d images, %d labels\n", len(pics), len(labs))
 	if len(pics) == 0 || len(labs) == 0 || len(pics) != len(labs) {
 		panic("Bad training data")
 	}
 
-    // Read test data
+	// Read test data
 	tpics := readMNISTIMages("data/mnist/t10k-images-idx3-ubyte.gz")
 	tlabs := readMNISTLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
-    fmt.Printf("Test data: %d images, %d labels\n", len(tpics), len(tlabs))
+	fmt.Printf("Test data: %d images, %d labels\n", len(tpics), len(tlabs))
 	if len(tpics) == 0 || len(tlabs) == 0 || len(tpics) != len(tlabs) {
 		panic("Bad test data")
 	}
 
 	// For debugging: only the first 10 rows and columns
-	pics = pics[:13]
-	labs = labs[:13]
+	//pics = pics[:13]
+	//labs = labs[:13]
 	fmt.Printf("%d pics, %d labels\n", len(pics), len(labs))
 
 	// Convert images to a single matrix, one flattened image per row
@@ -62,6 +62,7 @@ func main() {
 	pics1 := mat.NewDense(len(pics), ir*ic, nil)
 	for r := 0; r < len(pics); r++ { // copy each image a row
 		nums := MatrixNums(&pics[r])
+		//nums = append([]float64{1}, nums...) // insert a 1 for bias
 		pics1.SetRow(r, nums)
 	}
 
@@ -101,16 +102,17 @@ func main() {
 	//matPrint(m.w)
 
 	// Predict, on test data
+	fmt.Println("Predicting")
 	preds := m.classify(pics1)
-    fmt.Println("\nPredictions:")
-    matPrint(preds)
-    fmt.Println("\nActuals:")
-    fmt.Println(labs)
 
+	/*fmt.Println("\nPredictions:")
+	matPrint(preds)
+	fmt.Println("\nActuals:")
+	fmt.Println(labs)*/
 
 	// Measure simple accuracy
 	var ok, n int
-	for i := 0; i < len(pics); i++ {
+	for i := 0; i < len(labs); i++ {
 		n += 1
 		if labs[i] == preds.At(i, 0) {
 			ok += 1
@@ -184,7 +186,7 @@ func readMNISTIMages(filename string) []mat.Dense {
 func readMNISTLabels(filename string) []float64 {
 
 	// Images go into an array
-	labs := []float64{}  // only used to return empty list, not populated
+	labs := []float64{} // only used to return empty list, not populated
 
 	// Open raw binary file
 	f, err := os.Open(filename)
@@ -223,10 +225,10 @@ func readMNISTLabels(filename string) []float64 {
 
 	// Read labels into an array of bytes
 	ll := make([]byte, h.N)
-    n, err := fz.Read(ll)
-	if n < int(h.N) || err != nil {
-        fmt.Printf("Could not read labels: %d bytes read\n", n)
-        fmt.Println("Error:", err)
+	n, err := fz.Read(ll)
+	if err != nil && n != int(h.N) {
+		fmt.Printf("Could not read labels: %d bytes read\n", n)
+		fmt.Println("Error:", err)
 		return labs
 	}
 
