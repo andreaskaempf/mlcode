@@ -52,38 +52,45 @@ func main() {
 		panic("Bad test data")
 	}
 
-	// For debugging: only the first 10 rows and columns
-	//pics = pics[:13]
-	//labs = labs[:13]
-	fmt.Printf("%d pics, %d labels\n", len(pics), len(labs))
-
-	// Convert images to a single matrix, one flattened image per row
+	// Convert training images to a single matrix, one flattened image per row
 	ir, ic := pics[0].Dims()
-	pics1 := mat.NewDense(len(pics), ir*ic, nil)
+	pics1 := mat.NewDense(len(pics), ir*ic+1, nil)
 	for r := 0; r < len(pics); r++ { // copy each image a row
 		nums := MatrixNums(&pics[r])
-		//nums = append([]float64{1}, nums...) // insert a 1 for bias
+		nums = append([]float64{1}, nums...) // insert a 1 for bias
 		pics1.SetRow(r, nums)
 	}
 
-	// Add a column of 1s, for bias
-	pics1 = PrependBias(pics1) // TODO: can we do this above?
+	// Same for test images
+	ir, ic = tpics[0].Dims()
+	pics2 := mat.NewDense(len(tpics), ir*ic+1, nil)
+	for r := 0; r < len(tpics); r++ { // copy each image a row
+		nums := MatrixNums(&tpics[r])
+		nums = append([]float64{1}, nums...) // insert a 1 for bias
+		pics2.SetRow(r, nums)
+	}
 
-	// For multi-class, one-hot-encode the digits, so there is one row per
+	// Training labels: for multi-class, one-hot-encode the digits, so there is one row per
 	// label, and 10 columns, one for each possible digit 0-9
 	labsMulti := mat.NewDense(len(labs), 10, nil)
 	for i := 0; i < len(labs); i++ {
 		labsMulti.Set(i, int(labs[i]), 1)
 	}
 
+	// Same for test labels
+	tlabsMulti := mat.NewDense(len(tlabs), 10, nil)
+	for i := 0; i < len(tlabs); i++ {
+		tlabsMulti.Set(i, int(tlabs[i]), 1)
+	}
+
 	// For binary classifier, convert labels to 1 if 5 or 0 otherwise
 	// labs[i] = ifThenElse(labs[i] == 5, 1, 0)
-	labs1 := mat.NewDense(len(labs), 1, nil)
+	/*labs1 := mat.NewDense(len(labs), 1, nil)
 	for i := 0; i < len(labs); i++ {
 		if labs[i] == 5 {
 			labs1.Set(i, 0, 1)
 		}
-	}
+	}*/
 
 	// Create binary logistic regression model, set parameters
 	//m := LogisticRegression{}
@@ -98,12 +105,9 @@ func main() {
 	m := MultiLogRegression{iterations: 100, lr: .00001, verbose: true}
 	m.train(pics1, labsMulti)
 
-	//fmt.Println("\nFinal coefficients:")
-	//matPrint(m.w)
-
 	// Predict, on test data
 	fmt.Println("Predicting")
-	preds := m.classify(pics1)
+	preds := m.classify(pics2)
 
 	/*fmt.Println("\nPredictions:")
 	matPrint(preds)
@@ -112,9 +116,9 @@ func main() {
 
 	// Measure simple accuracy
 	var ok, n int
-	for i := 0; i < len(labs); i++ {
+	for i := 0; i < len(tlabs); i++ {
 		n += 1
-		if labs[i] == preds.At(i, 0) {
+		if tlabs[i] == preds.At(i, 0) {
 			ok += 1
 		}
 	}

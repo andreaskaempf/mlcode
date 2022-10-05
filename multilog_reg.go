@@ -12,56 +12,61 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Structure for a logistic regression model
+// Structure for a multi-class logistic regression model
 type MultiLogRegression struct {
-	lr         float64    // learning rate, default .001
-	tol        float64    // tolerance to stop training, default .001
-	iterations int        // max iterations, default 1000
+	lr         float64    // learning rate, e.g., .001
+	iterations int        // iterations to run
 	verbose    bool       // messages during train, default false
 	w          *mat.Dense // vector of weights, set during training
 }
 
-// Train a multi-class logistic regression model
+// Train a multi-class logistic regression model, sets the weights in the model object
 func (m *MultiLogRegression) train(X, Y *mat.Dense) {
 
-	// Initialize weights/coefficients to zero (a column vector, with length =
-	// number of columns in X)
+	// Initialize weights/coefficients to zero
+	// Python: np.zeros((X_train.shape[1], Y_train.shape[1]))
 	_, xc := X.Dims()
 	_, yc := Y.Dims()
-	m.w = mat.NewDense(xc, yc, nil) // Python: np.zeros((X_train.shape[1], Y_train.shape[1]))
-
-	// Set other model parameters if not set yet
-	if m.iterations <= 0 {
-		m.iterations = 1000
-	}
-	if m.lr <= 0 || m.lr >= 1 {
-		m.lr = .001
-	}
-	if m.tol <= 0 || m.tol >= 1 {
-		m.tol = .001
-	}
+	m.w = mat.NewDense(xc, yc, nil)
 
 	// Just repeat for given number of interations
 	for i := 0; i < m.iterations; i++ {
 
-		// Calculate loss
-		l := m.loss(X, Y)
+		// Calculate loss (only for information purposes)
 		if m.verbose {
+			l := m.loss(X, Y)
 			fmt.Printf("Iteration %d: loss = %f\n", i, l)
 		}
 
 		// Adjust the weights (coefficients) using the gradients
 		// Python: w -= gradient(X, Y, w) * lr
 		grads := m.gradient(X, Y)
-		//gr, gc := grads.Dims()
-		//fmt.Printf("Gradient %d x %d:\n", gr, gc)
-		//matPrint(grads)
 		grads.Scale(m.lr, grads)
 		m.w.Sub(m.w, grads)
-		//fmt.Println("Weights after adjustment, lr =", m.lr)
 		//matPrint(m.w)
 	}
 
+}
+
+// Compute the gradient for logistic regression
+// Python: return np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
+func (m *MultiLogRegression) gradient(X, Y *mat.Dense) *mat.Dense {
+
+	// Get differences of predictions vs. actual
+	// Python: (forward(X, w) - Y))
+	deltas := m.forward(X)
+	deltas.Sub(deltas, Y)
+
+	// Multiply transposed X by the deltas
+	// Python: np.matmul(X.T, ...)
+	_, dc := deltas.Dims()
+	xr, xc := X.Dims()
+	res := mat.NewDense(xc, dc, nil) // TODO: Can we avoid allocating each time?
+	res.Mul(X.T(), deltas)
+
+	// Divide by number of rows: ... / X.shape[0]
+	res.Scale(1.0/float64(xr), res)
+	return res
 }
 
 // Forward prediction given X values and weights (coefficients)
@@ -71,7 +76,7 @@ func (m *MultiLogRegression) forward(X *mat.Dense) *mat.Dense {
 	// weighted_sum = np.matmul(X, w)
 	xr, _ := X.Dims()
 	_, wc := m.w.Dims()
-	res := mat.NewDense(xr, wc, nil)
+	res := mat.NewDense(xr, wc, nil) // TODO: Avoid allocating each time?
 	res.Mul(X, m.w)
 
 	// return sigmoid(weighted_sum) -- must be vectorized
@@ -80,6 +85,41 @@ func (m *MultiLogRegression) forward(X *mat.Dense) *mat.Dense {
 	}, res)
 
 	return res
+}
+
+// Calculate loss function for predictions vs. actual values
+func (m *MultiLogRegression) loss(X, Y *mat.Dense) float64 {
+
+	// Calculate predictions
+	// Python: y_hat = forward(X, w)
+	fmt.Println("loss: X =")
+	matPrint(X)
+	fmt.Println("Y =")
+	matPrint(Y)
+	fmt.Println("w =")
+	matPrint(m.w)
+
+	y_hat := m.forward(X)
+
+	fmt.Println("y_hat =")
+	matPrint(y_hat)
+
+	// Calculate average loss, using direct calculation rather than operations on matrices.
+	// Python:
+	//   first_term = Y * np.log(y_hat)
+	//   second_term = (1 - Y) * np.log(1 - y_hat)
+	//   return -np.sum(first_term + second_term) / X.shape[0]
+	yrows, ycols := Y.Dims()
+	xrows, _ := X.Dims()
+	var result float64
+	for i := 0; i < yrows; i++ {
+		for j := 0; j < ycols; j++ {
+			result += Y.At(i, j) * math.Log(y_hat.At(i, j))
+			result += (1 - Y.At(i, j)) * math.Log(1-y_hat.At(i, j))
+		}
+	}
+
+	return result / float64(xrows) * -1
 }
 
 // Predict (classify) given matrix of features and vector of weights
@@ -91,7 +131,7 @@ func (m *MultiLogRegression) classify(X *mat.Dense) *mat.Dense {
 	// Just predict forward, and return a vector of the column numbers with the highest value
 	preds := m.forward(X)
 	rows, _ := preds.Dims()
-	result := mat.NewDense(rows, 1, nil)
+	result := mat.NewDense(rows, 1, nil) // TODO: Avoid allocating each time?
 	for r := 0; r < rows; r++ {
 		result.Set(r, 0, float64(maxCol(preds, r)))
 	}
@@ -110,51 +150,4 @@ func maxCol(m *mat.Dense, row int) int {
 		}
 	}
 	return maxCol
-}
-
-// Calculate loss function for predictions vs. actual values
-func (m *MultiLogRegression) loss(X, Y *mat.Dense) float64 {
-
-	// Calculate predictions
-	// Python: y_hat = forward(X, w)
-	y_hat := m.forward(X)
-
-	// Calculate average loss, using direct calculation rather than operations on matrices.
-	// Python:
-	//   first_term = Y * np.log(y_hat)
-	//   second_term = (1 - Y) * np.log(1 - y_hat)
-	//   return -np.sum(first_term + second_term) / X.shape[0]
-	yrows, ycols := Y.Dims()
-	xrows, _ := X.Dims()
-	var result float64
-	for i := 0; i < yrows; i++ {
-		for j := 0; j < ycols; j++ {
-			result += Y.At(i, j)*math.Log(y_hat.At(i, j)) + (1-Y.At(i, j))*math.Log(1-y_hat.At(i, j))
-		}
-	}
-	return result / float64(xrows) * -1
-}
-
-// Compute the gradient for logistic regression
-// Python: return np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
-func (m *MultiLogRegression) gradient(X, Y *mat.Dense) *mat.Dense {
-
-	// Get differences of predictions vs. actual
-	// Python: (forward(X, w) - Y))
-	deltas := m.forward(X)
-	//#rrr, ccc := deltas.Dims()
-	//fmt.Println("forward(X) called from gradient %d x %d\n", rrr, ccc)
-	//matPrint(deltas)
-	deltas.Sub(deltas, Y)
-
-	// Multiply transposed X by the deltas
-	// Python: np.matmul(X.T, ...)
-	_, dc := deltas.Dims()
-	xr, xc := X.Dims()
-	res := mat.NewDense(xc, dc, nil) // TODO: Can we avoid allocating each time?
-	res.Mul(X.T(), deltas)
-
-	// Divide by number of rows: ... / X.shape[0]
-	res.Scale(1.0/float64(xr), res)
-	return res
 }

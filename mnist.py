@@ -61,5 +61,5 @@ Y_test = load_labels("data/mnist/t10k-labels-idx1-ubyte.gz")
 
 
 # For debugging, only first 13 rows
-X_train = X_train[:13,:]
-Y_train = Y_train[:13,:]
+#X_train = X_train[:13,:]
+#Y_train = Y_train[:13,:]
