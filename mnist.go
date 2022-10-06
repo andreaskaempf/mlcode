@@ -39,6 +39,8 @@ func main() {
 	// Read training images and labels
 	pics := readMNISTIMages("data/mnist/train-images-idx3-ubyte.gz")
 	labs := readMNISTLabels("data/mnist/train-labels-idx1-ubyte.gz")
+	pics = pics[:40]
+	labs = labs[:40]
 	fmt.Printf("Training data: %d images, %d labels\n", len(pics), len(labs))
 	if len(pics) == 0 || len(labs) == 0 || len(pics) != len(labs) {
 		panic("Bad training data")
@@ -52,7 +54,8 @@ func main() {
 		panic("Bad test data")
 	}
 
-	// Convert training images to a single matrix, one flattened image per row
+	// Convert training images to a single matrix, one flattened image per row,
+	// insert 1 for bias at the beginning of each row
 	ir, ic := pics[0].Dims()
 	pics1 := mat.NewDense(len(pics), ir*ic+1, nil)
 	for r := 0; r < len(pics); r++ { // copy each image a row
@@ -82,6 +85,11 @@ func main() {
 	for i := 0; i < len(tlabs); i++ {
 		tlabsMulti.Set(i, int(tlabs[i]), 1)
 	}
+
+	// Write matrices to a text file for debugging
+	//writeMatrix(pics1, "X_train_go.txt")
+	//writeMatrix(labsMulti, "Y_train_go.txt")
+	//return
 
 	// For binary classifier, convert labels to 1 if 5 or 0 otherwise
 	// labs[i] = ifThenElse(labs[i] == 5, 1, 0)

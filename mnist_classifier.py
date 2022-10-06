@@ -17,15 +17,6 @@ def loss(X, Y, w):
     y_hat = forward(X, w)
     first_term = Y * np.log(y_hat)
     second_term = (1 - Y) * np.log(1 - y_hat)
-    print('\nloss:')
-    print('X =', X)
-    print('Y =', Y)
-    print('w =', w)
-    print('y_hat =', y_hat)
-    print('first_term =', first_term)
-    print('second_term =', second_term)
-    print('first + second_term =', first_term + second_term)
-    print('sum =', np.sum(first_term + second_term))
     return -np.sum(first_term + second_term) / X.shape[0]
 
 def gradient(X, Y, w):
@@ -42,38 +33,39 @@ def train(X_train, Y_train, X_test, Y_test, iterations, lr):
     for i in range(iterations):
         report(i, X_train, Y_train, X_test, Y_test, w)
         w -= gradient(X_train, Y_train, w) * lr
-        print(w)
     report(iterations, X_train, Y_train, X_test, Y_test, w)
     return w
 
-#train(data.X_train, data.Y_train, data.X_test, data.Y_test, 
-#        iterations=3, lr=1e-5)
+train(data.X_train, data.Y_train, data.X_test, data.Y_test, 
+        iterations=100, lr=1e-5)
 
 # Some tests: 5 instances, 2 classes
-# X: 5 x 3
-# w: 3 x 
-# Y: 5 x 3
-X = np.array([[1,2,3], [4,5,6], [7,8,9], [10,11,12], [13,14,15]])
-Y = np.array([[1,0], [1,0], [0,1], [1,0], [0,1]])
-w = np.array([[.01, .02], [.03, .04], [.05, .06]])
+if False:
 
-print('X =', X)
-print('Y =', Y)
-print('w =', w)
+    # X: 5 x 3
+    # w: 3 x 
+    # Y: 5 x 3
+    X = np.array([[1,2,3], [4,5,6], [7,8,9], [10,11,12], [13,14,15]])
+    Y = np.array([[1,0], [1,0], [0,1], [1,0], [0,1]])
+    w = np.array([[.01, .02], [.03, .04], [.05, .06]])
 
-f = forward(X, w)
-print('forward(X,w) =')
-print(f)
+    print('X =', X)
+    print('Y =', Y)
+    print('w =', w)
 
-g = gradient(X, Y, w)
-print('gradient(X, Y, w) =')
-print(g)
+    f = forward(X, w)
+    print('forward(X,w) =')
+    print(f)
 
-w -= g * .01
-print('adjusted w =')
-print(w)
+    g = gradient(X, Y, w)
+    print('gradient(X, Y, w) =')
+    print(g)
 
-l = loss(X, Y, w)
-print('loss =')
-print(l)
+    w -= g * .01
+    print('adjusted w =')
+    print(w)
+
+    l = loss(X, Y, w)
+    print('loss =')
+    print(l)
 

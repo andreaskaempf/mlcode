@@ -142,3 +142,22 @@ func MatrixNums(m *mat.Dense) []float64 {
 	}
 	return a
 }
+
+// Write matrix to a text file for debugging
+func writeMatrix(m *mat.Dense, filename string) {
+	nr, nc := m.Dims()
+	fmt.Printf("Writing matrix %d x %d to %s\n", nr, nc, filename)
+	f, _ := os.Create(filename)
+	for r := 0; r < nr; r++ {
+		f.WriteString("[")
+		for c := 0; c < nc; c++ {
+			if c > 0 {
+				f.WriteString(", ")
+			}
+			fmt.Fprintf(f, "%d", int(m.At(r, c)))
+		}
+		f.WriteString("]\n")
+	}
+	f.Close()
+	fmt.Println("  finished")
+}

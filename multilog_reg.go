@@ -92,17 +92,17 @@ func (m *MultiLogRegression) loss(X, Y *mat.Dense) float64 {
 
 	// Calculate predictions
 	// Python: y_hat = forward(X, w)
-	fmt.Println("loss: X =")
+	/*fmt.Println("loss: X =")
 	matPrint(X)
 	fmt.Println("Y =")
 	matPrint(Y)
 	fmt.Println("w =")
-	matPrint(m.w)
+	matPrint(m.w)*/
 
 	y_hat := m.forward(X)
 
-	fmt.Println("y_hat =")
-	matPrint(y_hat)
+	//fmt.Println("y_hat =")
+	//matPrint(y_hat)
 
 	// Calculate average loss, using direct calculation rather than operations on matrices.
 	// Python:

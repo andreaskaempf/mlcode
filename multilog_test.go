@@ -76,6 +76,7 @@ func TestMultiLogRegr(t *testing.T) {
 
 	// Test loss function
 	l := m.loss(X, Y)
+	fmt.Println("Loss =", l)
 	expect5 := 1.4269
 	if !close(l, expect5) {
 		fmt.Printf("Loss failed: got %f, expected %f\n", l, expect5)
