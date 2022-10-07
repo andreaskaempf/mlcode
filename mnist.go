@@ -10,7 +10,6 @@
 package main
 
 import (
-	"bytes"
 	"compress/gzip"
 	"encoding/binary"
 	"fmt"
@@ -19,77 +18,21 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Structure for header of images file
-type ImageHeader struct {
-	Signature  uint32 // seems to be 2051, not used
-	N          uint32 // number of images
-	Cols, Rows uint32 // rows & cols for each image
-}
-
-// Structure for header of labels file
-type LabelHeader struct {
-	Signature uint32 // seems to be 2051, not used
-	N         uint32 // number of labels
-}
-
 // Demonstrate training logistic regression binary classification
 // on one digit in MNIST data
 func main() {
 
 	// Read training images and labels
-	pics := readMNISTIMages("data/mnist/train-images-idx3-ubyte.gz")
-	labs := readMNISTLabels("data/mnist/train-labels-idx1-ubyte.gz")
-	pics = pics[:40]
-	labs = labs[:40]
-	fmt.Printf("Training data: %d images, %d labels\n", len(pics), len(labs))
-	if len(pics) == 0 || len(labs) == 0 || len(pics) != len(labs) {
-		panic("Bad training data")
-	}
+	pics := readImages("data/mnist/train-images-idx3-ubyte.gz")
+	labs := readLabels("data/mnist/train-labels-idx1-ubyte.gz")
 
 	// Read test data
-	tpics := readMNISTIMages("data/mnist/t10k-images-idx3-ubyte.gz")
-	tlabs := readMNISTLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
-	fmt.Printf("Test data: %d images, %d labels\n", len(tpics), len(tlabs))
-	if len(tpics) == 0 || len(tlabs) == 0 || len(tpics) != len(tlabs) {
-		panic("Bad test data")
-	}
+	tpics := readImages("data/mnist/t10k-images-idx3-ubyte.gz")
+	tlabs := readLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
 
-	// Convert training images to a single matrix, one flattened image per row,
-	// insert 1 for bias at the beginning of each row
-	ir, ic := pics[0].Dims()
-	pics1 := mat.NewDense(len(pics), ir*ic+1, nil)
-	for r := 0; r < len(pics); r++ { // copy each image a row
-		nums := MatrixNums(&pics[r])
-		nums = append([]float64{1}, nums...) // insert a 1 for bias
-		pics1.SetRow(r, nums)
-	}
-
-	// Same for test images
-	ir, ic = tpics[0].Dims()
-	pics2 := mat.NewDense(len(tpics), ir*ic+1, nil)
-	for r := 0; r < len(tpics); r++ { // copy each image a row
-		nums := MatrixNums(&tpics[r])
-		nums = append([]float64{1}, nums...) // insert a 1 for bias
-		pics2.SetRow(r, nums)
-	}
-
-	// Training labels: for multi-class, one-hot-encode the digits, so there is one row per
-	// label, and 10 columns, one for each possible digit 0-9
-	labsMulti := mat.NewDense(len(labs), 10, nil)
-	for i := 0; i < len(labs); i++ {
-		labsMulti.Set(i, int(labs[i]), 1)
-	}
-
-	// Same for test labels
-	tlabsMulti := mat.NewDense(len(tlabs), 10, nil)
-	for i := 0; i < len(tlabs); i++ {
-		tlabsMulti.Set(i, int(tlabs[i]), 1)
-	}
-
-	// Write matrices to a text file for debugging
-	//writeMatrix(pics1, "X_train_go.txt")
-	//writeMatrix(labsMulti, "Y_train_go.txt")
-	//return
+	// Training labels: for multi-class, one-hot-encode the digits, so there is
+	// one row per label, and 10 columns, one for each possible digit 0-9
+	labs1 := oneHotEncode(labs) // not required for test labels
 
 	// For binary classifier, convert labels to 1 if 5 or 0 otherwise
 	// labs[i] = ifThenElse(labs[i] == 5, 1, 0)
@@ -100,151 +43,136 @@ func main() {
 		}
 	}*/
 
-	// Create binary logistic regression model, set parameters
-	//m := LogisticRegression{}
-	//m.iterations = 100 // 1000 iterations gets to loss .211
-	//m.lr = .00001      // need .00002 or smaller to converge
-	//m.verbose = true   // to show running loss value
-
-	// Train binary classifier logistic regression model on image data with 1/0 labels
+	// Create and train binary logistic regression model,
+	//m := LogisticRegression{iterations: 100, lr: .00001, verbose: true}
 	//m.train(pics1, labs1)
 
 	// Train multi-class classifier using 10-column one-hot encoded labels
-	m := MultiLogRegression{iterations: 100, lr: .00001, verbose: true}
-	m.train(pics1, labsMulti)
+	m := MultiLogRegression{iterations: 100, lr: 1e-5, verbose: true}
+	m.train(pics, labs1)
 
-	// Predict, on test data
+	// Predict on test data, measure simple accuracy
 	fmt.Println("Predicting")
-	preds := m.classify(pics2)
-
-	/*fmt.Println("\nPredictions:")
-	matPrint(preds)
-	fmt.Println("\nActuals:")
-	fmt.Println(labs)*/
-
-	// Measure simple accuracy
+	preds := m.classify(tpics) // should training pics include bias?
 	var ok, n int
-	for i := 0; i < len(tlabs); i++ {
+	nlabs, _ := tlabs.Dims()
+	for i := 0; i < nlabs; i++ {
 		n += 1
-		if tlabs[i] == preds.At(i, 0) {
+		if tlabs.At(i, 0) == preds.At(i, 0) {
 			ok += 1
 		}
 	}
 	fmt.Printf("Accuracy = %f\n", float64(ok)/float64(n))
 }
 
-// Read MNIST images file, returns a slice of 28x28 matrices
-func readMNISTIMages(filename string) []mat.Dense {
-
-	// Images go into an array
-	pics := []mat.Dense{}
+// Read MNIST images file, returns a matrix with one image per row,
+// bias value of 1 inserted at the beginning of each row
+func readImages(filename string) *mat.Dense {
 
 	// Open raw binary file
 	f, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Could not open file:", filename)
-		return pics
+		panic("Could not open file")
 	}
 	defer f.Close()
 
 	// Prepare to read as gzip
 	fz, err := gzip.NewReader(f)
 	if err != nil {
-		fmt.Println("Could not open as gzip file:", filename)
-		return pics
+		panic("Could not open as gzip file")
 	}
 	defer fz.Close()
 
-	// Read header from first 16 bytes
-	bb := make([]byte, 16)
-	_, err = fz.Read(bb)
+	// Read header: magic 2051, #images, rows, cols
+	header := make([]int32, 4, 4)
+	err = binary.Read(fz, binary.BigEndian, header)
 	if err != nil {
-		fmt.Println("Could not read header")
-		return pics
+		panic("Could not read binary header")
 	}
+	n := int(header[1])
+	nrows := header[2]
+	ncols := header[3]
+	npix := int(nrows * ncols) // pixels per image
+	fmt.Printf("%s: %d images, %d x %d\n", filename, n, nrows, ncols)
 
-	// Coerce to structure
-	h := ImageHeader{}
-	buf := bytes.NewBuffer(bb)
-	err = binary.Read(buf, binary.BigEndian, &h)
-	if err != nil {
-		fmt.Println("Could not parse binary")
-		return pics
-	}
+	// Allocate matrix for result, one image per row, with bias number
+	// at beginning of each row
+	result := mat.NewDense(n, npix+1, nil)
 
-	fmt.Printf("Header for %s: %+v\n", filename, h)
+	// Read each image
+	pixels := make([]uint8, npix, npix) // buffer for one image
+	for i := 0; i < n; i++ {            // each image
 
-	// Read images into matrix format
-	for i := 0; i < int(h.N); i++ {
-
-		// Read the image data
-		pixels := make([]byte, h.Rows*h.Cols)
-		_, err = fz.Read(pixels)
+		// Read 28x28 pixels
+		err := binary.Read(fz, binary.BigEndian, pixels)
 		if err != nil {
-			fmt.Println("Could not read image", i)
-			return pics // warning: list will be incomplete
+			panic("Could not read image")
 		}
 
-		// Convert to a matrix, add to array
-		p := mat.NewDense(int(h.Rows), int(h.Cols), bytesToFloats(pixels))
-		pics = append(pics, *p)
+		// Convert to floats, inserting bias at beginning
+		pixels2 := make([]float64, npix+1, npix+1)
+		pixels2[0] = 1 // bias
+		for j := 0; j < npix; j++ {
+			pixels2[j+1] = float64(pixels[j])
+		}
+
+		// Set row of the result
+		result.SetRow(i, pixels2)
 	}
 
-	// Return list of images
-	return pics
+	return result
 }
 
-// Read MNIST labels file, returns a slice of floats
-func readMNISTLabels(filename string) []float64 {
+// Read MNIST labels file, returns N x 1 matrix
+func readLabels(filename string) *mat.Dense {
 
-	// Images go into an array
-	labs := []float64{} // only used to return empty list, not populated
-
-	// Open raw binary file
+	// Open raw binary file (TODO: gzip)
 	f, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("Could not open file:", filename)
-		return labs
+		panic("Could not open file")
 	}
 	defer f.Close()
 
 	// Prepare to read as gzip
 	fz, err := gzip.NewReader(f)
 	if err != nil {
-		fmt.Println("Could not open as gzip file:", filename)
-		return labs
+		panic("Could not open as gzip file")
 	}
 	defer fz.Close()
 
-	// Read header from first 8 bytes
-	bb := make([]byte, 8)
-	_, err = fz.Read(bb)
+	// Read header: magic 2049, #images
+	header := make([]int32, 2, 2)
+	err = binary.Read(fz, binary.BigEndian, header)
 	if err != nil {
-		fmt.Println("Could not read header")
-		return labs
+		panic("Could not read binary")
 	}
+	n := int(header[1])
+	fmt.Printf("%s: %d labels\n", filename, n)
 
-	// Coerce to structure
-	h := LabelHeader{}
-	buf := bytes.NewBuffer(bb)
-	err = binary.Read(buf, binary.BigEndian, &h)
+	// Allocate matrix for result, one label per row
+	result := mat.NewDense(n, 1, nil)
+
+	// Read all labels, assign to matrix
+	labels := make([]uint8, n, n)
+	err = binary.Read(fz, binary.BigEndian, labels)
 	if err != nil {
-		fmt.Println("Could not parse binary")
-		return labs
+		panic("Could not read label")
+	}
+	for i := 0; i < n; i++ { // each label
+		result.Set(i, 0, float64(labels[i]))
 	}
 
-	fmt.Printf("Header for %s: %+v\n", filename, h)
+	return result
+}
 
-	// Read labels into an array of bytes
-	ll := make([]byte, h.N)
-	n, err := fz.Read(ll)
-	if err != nil && n != int(h.N) {
-		fmt.Printf("Could not read labels: %d bytes read\n", n)
-		fmt.Println("Error:", err)
-		return labs
+// One-hot encode a column of 0-9 labels
+// TODO: don't hardcode the number of values
+func oneHotEncode(labels *mat.Dense) *mat.Dense {
+	nr, _ := labels.Dims() // TODO: check nc is 1
+	nvals := 10            // TODO: infer from data
+	result := mat.NewDense(nr, nvals, nil)
+	for i := 0; i < nr; i++ {
+		result.Set(i, int(labels.At(i, 0)), 1)
 	}
-
-	// Return list of floats
-	// TODO: Matrix?
-	return bytesToFloats(ll)
+	return result
 }

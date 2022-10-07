@@ -111,38 +111,6 @@ func readCsv(filename string) [][]string {
 	return data
 }
 
-// Insert a column of 1s in front of a matrix
-func PrependBias(m *mat.Dense) *mat.Dense {
-
-	// Make a new matrix, with additional column
-	r, c := m.Dims()
-	m1 := mat.NewDense(r, c+1, nil)
-
-	// Copy values across, shifted over one column, and set first col to 1
-	for j := 0; j < r; j++ { // each row
-		m1.Set(j, 0, 1.0)        // set first col to 1
-		for i := 0; i < c; i++ { // each column
-			m1.Set(j, i+1, m.At(j, i)) // copy value, shift right one
-		}
-	}
-
-	return m1
-}
-
-// Return the numbers of a matrix as a list of floats, row-wise
-func MatrixNums(m *mat.Dense) []float64 {
-	r, c := m.Dims()
-	a := make([]float64, r*c, r*c)
-	i := 0                      // current index in output array
-	for ri := 0; ri < r; ri++ { // each row of matrix
-		for ci := 0; ci < c; ci++ { // each column
-			a[i] = m.At(ri, ci)
-			i++
-		}
-	}
-	return a
-}
-
 // Write matrix to a text file for debugging
 func writeMatrix(m *mat.Dense, filename string) {
 	nr, nc := m.Dims()

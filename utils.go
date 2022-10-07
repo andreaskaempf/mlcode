@@ -30,6 +30,7 @@ func same(A, B []float64) bool {
 }
 
 // Determine if two matrices are the same (or at least close)
+// TODO: You can actually use build-in function from mat for this
 func matSame(A, B mat.Matrix) bool {
 	ar, ac := A.Dims()
 	br, bc := B.Dims()
@@ -44,16 +45,6 @@ func matSame(A, B mat.Matrix) bool {
 		}
 	}
 	return true
-}
-
-// Convert a slice of bytes to a slice of floats
-func bytesToFloats(bb []byte) []float64 {
-	nb := len(bb)
-	ff := make([]float64, nb, nb)
-	for i := 0; i < nb; i++ {
-		ff[i] = float64(bb[i])
-	}
-	return ff
 }
 
 // Simple if-then-else operator, like a?b:c in C,

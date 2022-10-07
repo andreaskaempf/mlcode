@@ -5,3 +5,4 @@ book_code
 data/mnist
 *.pdf
 __pycache__
+python
