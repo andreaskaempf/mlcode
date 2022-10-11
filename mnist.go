@@ -18,7 +18,7 @@ import (
 
 // Demonstration of logistic regression on MNIST digits data, achieves 95%
 // accuracy on identifying the digit 5 (but 10/90 imbalanced data set).
-func MNISTDemo() {
+func MnistDemo() {
 
 	// Read training images and labels
 	pics := ReadImages("../data/mnist/train-images-idx3-ubyte.gz")
