@@ -18,15 +18,15 @@ import (
 
 // Demonstration of logistic regression on MNIST digits data, achieves 95%
 // accuracy on identifying the digit 5 (but 10/90 imbalanced data set).
-func MNIST_Demo() {
+func MNISTDemo() {
 
 	// Read training images and labels
-	pics := ReadImages("data/mnist/train-images-idx3-ubyte.gz")
-	labs := ReadLabels("data/mnist/train-labels-idx1-ubyte.gz")
+	pics := ReadImages("../data/mnist/train-images-idx3-ubyte.gz")
+	labs := ReadLabels("../data/mnist/train-labels-idx1-ubyte.gz")
 
 	// Read test data
-	tpics := ReadImages("data/mnist/t10k-images-idx3-ubyte.gz")
-	tlabs := ReadLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
+	tpics := ReadImages("../data/mnist/t10k-images-idx3-ubyte.gz")
+	tlabs := ReadLabels("../data/mnist/t10k-labels-idx1-ubyte.gz")
 
 	// Training labels: for multi-class, one-hot-encode the digits, so there is
 	// one row per label, and 10 columns, one for each possible digit 0-9
