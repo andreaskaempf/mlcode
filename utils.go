@@ -1,12 +1,17 @@
 // Utility functions, mainly for testing
 
-package main
+package mlcode
 
 import (
 	"math"
 
 	"gonum.org/v1/gonum/mat"
 )
+
+// The sigmoid function
+func Sigmoid(z float64) float64 {
+	return 1 / (1 + math.Exp(-z))
+}
 
 // Test whether two numbers are close
 func close(a, b float64) bool {

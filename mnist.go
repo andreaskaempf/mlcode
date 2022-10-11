@@ -1,13 +1,11 @@
-// Logistic regression on MNIST digits data, achieves 95% accuracy on
-// identifying the digit 5 (but 10/90 imbalanced data set).
-//
-// The data files can be downloaded from http://yann.lecun.com/exdb/mnist/
-// and should be stored in data/mnist under the current directory, in their
-// original gzipped state.
+// Functions to read MNIST digits data.  The data files can be
+// downloaded from http://yann.lecun.com/exdb/mnist/
+// and should be stored in data/mnist under the current directory,
+// in their original gzipped state.
 //
 // AK, 27/09/2022
 
-package main
+package mlcode
 
 import (
 	"compress/gzip"
@@ -18,21 +16,21 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Demonstrate training logistic regression binary classification
-// on one digit in MNIST data
-func main() {
+// Demonstration of logistic regression on MNIST digits data, achieves 95%
+// accuracy on identifying the digit 5 (but 10/90 imbalanced data set).
+func mnist_demo() {
 
 	// Read training images and labels
-	pics := readImages("data/mnist/train-images-idx3-ubyte.gz")
-	labs := readLabels("data/mnist/train-labels-idx1-ubyte.gz")
+	pics := ReadImages("data/mnist/train-images-idx3-ubyte.gz")
+	labs := ReadLabels("data/mnist/train-labels-idx1-ubyte.gz")
 
 	// Read test data
-	tpics := readImages("data/mnist/t10k-images-idx3-ubyte.gz")
-	tlabs := readLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
+	tpics := ReadImages("data/mnist/t10k-images-idx3-ubyte.gz")
+	tlabs := ReadLabels("data/mnist/t10k-labels-idx1-ubyte.gz")
 
 	// Training labels: for multi-class, one-hot-encode the digits, so there is
 	// one row per label, and 10 columns, one for each possible digit 0-9
-	labs1 := oneHotEncode(labs) // not required for test labels
+	labs1 := OneHotEncode(labs) // not required for test labels
 
 	// For binary classifier, convert labels to 1 if 5 or 0 otherwise
 	// labs[i] = ifThenElse(labs[i] == 5, 1, 0)
@@ -49,11 +47,11 @@ func main() {
 
 	// Train multi-class classifier using 10-column one-hot encoded labels
 	m := MultiLogRegression{iterations: 100, lr: 1e-5, verbose: true}
-	m.train(pics, labs1)
+	m.Train(pics, labs1)
 
 	// Predict on test data, measure simple accuracy
 	fmt.Println("Predicting")
-	preds := m.classify(tpics) // should training pics include bias?
+	preds := m.Classify(tpics) // should training pics include bias?
 	var ok, n int
 	nlabs, _ := tlabs.Dims()
 	for i := 0; i < nlabs; i++ {
@@ -67,7 +65,7 @@ func main() {
 
 // Read MNIST images file, returns a matrix with one image per row,
 // bias value of 1 inserted at the beginning of each row
-func readImages(filename string) *mat.Dense {
+func ReadImages(filename string) *mat.Dense {
 
 	// Open raw binary file
 	f, err := os.Open(filename)
@@ -124,7 +122,7 @@ func readImages(filename string) *mat.Dense {
 }
 
 // Read MNIST labels file, returns N x 1 matrix
-func readLabels(filename string) *mat.Dense {
+func ReadLabels(filename string) *mat.Dense {
 
 	// Open raw binary file (TODO: gzip)
 	f, err := os.Open(filename)
@@ -167,7 +165,7 @@ func readLabels(filename string) *mat.Dense {
 
 // One-hot encode a column of 0-9 labels
 // TODO: don't hardcode the number of values
-func oneHotEncode(labels *mat.Dense) *mat.Dense {
+func OneHotEncode(labels *mat.Dense) *mat.Dense {
 	nr, _ := labels.Dims() // TODO: check nc is 1
 	nvals := 10            // TODO: infer from data
 	result := mat.NewDense(nr, nvals, nil)

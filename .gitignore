@@ -1,8 +1,3 @@
-mlcode
 go.mod
 go.sum
-book_code
 data/mnist
-*.pdf
-__pycache__
-python

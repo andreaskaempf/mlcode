@@ -1,6 +1,6 @@
 // Unit tests for multi-class logistic regression
 
-package main
+package mlcode
 
 import (
 	"fmt"

@@ -2,7 +2,7 @@
 //
 // Utility functions for matrices using gonum
 
-package main
+package mlcode
 
 import (
 	"encoding/csv"
@@ -14,7 +14,7 @@ import (
 )
 
 // Pretty-print a matrix
-func matPrint(X mat.Matrix) {
+func MatPrint(X mat.Matrix) {
 	fa := mat.Formatted(X, mat.Prefix(""), mat.Squeeze())
 	fmt.Printf("%v\n", fa)
 }
@@ -24,7 +24,7 @@ func matPrint(X mat.Matrix) {
 // two columns.
 // Would prefer to use m.Slice() but that returns a mat.Matrix which
 // cannot be passed as mat.Dense argument.
-func extractCols(m *mat.Dense, i, j int) *mat.Dense {
+func ExtractCols(m *mat.Dense, i, j int) *mat.Dense {
 
 	// Make sure values are valid. Arguments represent the starting
 	// and ending column numbers, both zero based and inclusive (so 0,0 is
@@ -53,10 +53,10 @@ func extractCols(m *mat.Dense, i, j int) *mat.Dense {
 
 // Read a matrix from a CSV file, assumes first row is column headings
 // and all values are numeric (i.e., no string values)
-func readMatrixCSV(filename string) (*mat.Dense, []string) {
+func ReadMatrixCSV(filename string) (*mat.Dense, []string) {
 
 	// Read CSV file, will return empty array if failed
-	data := readCsv(filename)
+	data := ReadCsv(filename)
 	if len(data) < 2 { // must be at least headings plus one row of data
 		return nil, []string{}
 	}
@@ -92,7 +92,7 @@ func readMatrixCSV(filename string) (*mat.Dense, []string) {
 
 // Read CSV file into list of lists of strings,
 // return empty array if file not found or can't parse
-func readCsv(filename string) [][]string {
+func ReadCsv(filename string) [][]string {
 
 	// Open file
 	f, err := os.Open(filename)
@@ -112,7 +112,7 @@ func readCsv(filename string) [][]string {
 }
 
 // Write matrix to a text file for debugging
-func writeMatrix(m *mat.Dense, filename string) {
+func WriteMatrix(m *mat.Dense, filename string) {
 	nr, nc := m.Dims()
 	fmt.Printf("Writing matrix %d x %d to %s\n", nr, nc, filename)
 	f, _ := os.Create(filename)

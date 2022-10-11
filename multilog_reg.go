@@ -3,7 +3,7 @@
 // Based on Python implementation in Chapter 7 of "Programming Machine
 // Learning" by Paolo Perrotta
 
-package main
+package mlcode
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ type MultiLogRegression struct {
 }
 
 // Train a multi-class logistic regression model, sets the weights in the model object
-func (m *MultiLogRegression) train(X, Y *mat.Dense) {
+func (m *MultiLogRegression) Train(X, Y *mat.Dense) {
 
 	// Initialize weights/coefficients to zero
 	// Python: np.zeros((X_train.shape[1], Y_train.shape[1]))
@@ -34,13 +34,13 @@ func (m *MultiLogRegression) train(X, Y *mat.Dense) {
 
 		// Calculate loss (only for information purposes)
 		if m.verbose {
-			l := m.loss(X, Y)
+			l := m.Loss(X, Y)
 			fmt.Printf("Iteration %d: loss = %f\n", i, l)
 		}
 
 		// Adjust the weights (coefficients) using the gradients
 		// Python: w -= gradient(X, Y, w) * lr
-		grads := m.gradient(X, Y)
+		grads := m.Gradient(X, Y)
 		grads.Scale(m.lr, grads)
 		m.w.Sub(m.w, grads)
 		//matPrint(m.w)
@@ -50,11 +50,11 @@ func (m *MultiLogRegression) train(X, Y *mat.Dense) {
 
 // Compute the gradient for logistic regression
 // Python: return np.matmul(X.T, (forward(X, w) - Y)) / X.shape[0]
-func (m *MultiLogRegression) gradient(X, Y *mat.Dense) *mat.Dense {
+func (m *MultiLogRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 
 	// Get differences of predictions vs. actual
 	// Python: (forward(X, w) - Y))
-	deltas := m.forward(X)
+	deltas := m.Forward(X)
 	deltas.Sub(deltas, Y)
 
 	// Multiply transposed X by the deltas
@@ -71,7 +71,7 @@ func (m *MultiLogRegression) gradient(X, Y *mat.Dense) *mat.Dense {
 
 // Forward prediction given X values and weights (coefficients)
 // Python: sigmoid(np.matmul(X, w))
-func (m *MultiLogRegression) forward(X *mat.Dense) *mat.Dense {
+func (m *MultiLogRegression) Forward(X *mat.Dense) *mat.Dense {
 
 	// weighted_sum = np.matmul(X, w)
 	xr, _ := X.Dims()
@@ -81,30 +81,21 @@ func (m *MultiLogRegression) forward(X *mat.Dense) *mat.Dense {
 
 	// return sigmoid(weighted_sum) -- must be vectorized
 	res.Apply(func(i, j int, v float64) float64 {
-		return sigmoid(v)
+		return Sigmoid(v)
 	}, res)
 
 	return res
 }
 
 // Calculate loss function for predictions vs. actual values
-func (m *MultiLogRegression) loss(X, Y *mat.Dense) float64 {
+func (m *MultiLogRegression) Loss(X, Y *mat.Dense) float64 {
 
 	// Calculate predictions
 	// Python: y_hat = forward(X, w)
-	/*fmt.Println("loss: X =")
-	matPrint(X)
-	fmt.Println("Y =")
-	matPrint(Y)
-	fmt.Println("w =")
-	matPrint(m.w)*/
+	y_hat := m.Forward(X)
 
-	y_hat := m.forward(X)
-
-	//fmt.Println("y_hat =")
-	//matPrint(y_hat)
-
-	// Calculate average loss, using direct calculation rather than operations on matrices.
+	// Calculate average loss, using direct calculation rather than
+	// operations on matrices.
 	// Python:
 	//   first_term = Y * np.log(y_hat)
 	//   second_term = (1 - Y) * np.log(1 - y_hat)
@@ -126,20 +117,21 @@ func (m *MultiLogRegression) loss(X, Y *mat.Dense) float64 {
 // (coefficients)
 // Python: labels = np.argmax(y_hat, axis=1)
 //         return labels.reshape(-1, 1)
-func (m *MultiLogRegression) classify(X *mat.Dense) *mat.Dense {
+func (m *MultiLogRegression) Classify(X *mat.Dense) *mat.Dense {
 
-	// Just predict forward, and return a vector of the column numbers with the highest value
-	preds := m.forward(X)
+	// Just predict forward, and return a vector of the column numbers
+	// with the highest value
+	preds := m.Forward(X)
 	rows, _ := preds.Dims()
 	result := mat.NewDense(rows, 1, nil) // TODO: Avoid allocating each time?
 	for r := 0; r < rows; r++ {
-		result.Set(r, 0, float64(maxCol(preds, r)))
+		result.Set(r, 0, float64(MaxCol(preds, r)))
 	}
 	return result
 }
 
 // Return the column that has the maximum value in the given row
-func maxCol(m *mat.Dense, row int) int {
+func MaxCol(m *mat.Dense, row int) int {
 	_, cols := m.Dims()
 	maxVal := m.At(row, 0)
 	maxCol := 0
