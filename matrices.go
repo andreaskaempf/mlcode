@@ -13,10 +13,49 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// Number of rows of a matrix
+func MatRows(m *mat.Dense) int {
+	nr, _ := m.Dims()
+	return nr
+}
+
+// Number of columns of a matrix
+func MatCols(m *mat.Dense) int {
+	_, nc := m.Dims()
+	return nc
+}
+
 // Pretty-print a matrix
 func MatPrint(X mat.Matrix) {
 	fa := mat.Formatted(X, mat.Prefix(""), mat.Squeeze())
 	fmt.Printf("%v\n", fa)
+}
+
+// Return the column that has the maximum value in the given row
+func MaxCol(m *mat.Dense, row int) int {
+	_, cols := m.Dims()
+	maxVal := m.At(row, 0)
+	maxCol := 0
+	for i := 1; i < cols; i++ {
+		if m.At(row, i) > maxVal {
+			maxVal = m.At(row, i)
+			maxCol = i
+		}
+	}
+	return maxCol
+}
+
+// Make a copy of a matrix, adding a column of 1s in front
+func PrependBias(m *mat.Dense) *mat.Dense {
+	nr, nc := m.Dims()
+	y := mat.NewDense(nr, nc+1, nil)
+	for r := 0; r < nr; r++ {
+		y.Set(r, 0, 1) // the new bias column
+		for c := 0; c < nc; c++ {
+			y.Set(r, c+1, m.At(r, c))
+		}
+	}
+	return y
 }
 
 // Extract columns from a matrix and return a copy. First and last

@@ -129,17 +129,3 @@ func (m *MultiLogRegression) Classify(X *mat.Dense) *mat.Dense {
 	}
 	return result
 }
-
-// Return the column that has the maximum value in the given row
-func MaxCol(m *mat.Dense, row int) int {
-	_, cols := m.Dims()
-	maxVal := m.At(row, 0)
-	maxCol := 0
-	for i := 1; i < cols; i++ {
-		if m.At(row, i) > maxVal {
-			maxVal = m.At(row, i)
-			maxCol = i
-		}
-	}
-	return maxCol
-}
