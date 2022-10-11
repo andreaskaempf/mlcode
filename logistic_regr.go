@@ -142,7 +142,7 @@ func (m *LogisticRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 func logistic_regression_demo() {
 
 	// Read data into matrix, separate X and Y
-	data, _ := ReadMatrixCSV("data/police.txt")
+	data, _ := ReadMatrixCSV("../data/police.txt")
 	X := ExtractCols(data, 0, 2) // all cols except last
 	Y := ExtractCols(data, 3, 3) // just the last col
 	fmt.Println("X =")

@@ -17,8 +17,8 @@ func TestLogRegr(t *testing.T) {
 	try := []float64{0, .25, .50, 1}
 	expect := []float64{.5, .562, .622, .731}
 	for i := 0; i < len(try); i++ {
-		if !close(sigmoid(try[i]), expect[i]) {
-			fmt.Printf("sigmoid(%f) produced %f instead of %f\n", try[i], sigmoid(try[i]), expect[i])
+		if !close(Sigmoid(try[i]), expect[i]) {
+			fmt.Printf("sigmoid(%f) produced %f instead of %f\n", try[i], Sigmoid(try[i]), expect[i])
 			t.Error("Sigmoid failed")
 		}
 	}
@@ -33,21 +33,21 @@ func TestLogRegr(t *testing.T) {
 
 	// Test forward()
 	expect1 := mat.NewDense(5, 1, []float64{.827, .664, .787, .867, .814})
-	fwd := m.forward(X) // need to initialize w?
+	fwd := m.Forward(X)
 	if !matSame(fwd, expect1) {
 		fmt.Println("X =")
-		matPrint(X)
+		MatPrint(X)
 		fmt.Println("w =")
-		matPrint(m.w)
+		MatPrint(m.w)
 		fmt.Println("forward(X) =")
-		matPrint(fwd)
+		MatPrint(fwd)
 		fmt.Println("expected:")
-		matPrint(expect1)
+		MatPrint(expect1)
 		t.Error("Forward failed")
 	}
 
 	// Test classify, based on previous forward values
-	cls := m.classify(X)
+	cls := m.Classify(X)
 	expect2 := mat.NewDense(5, 1, []float64{1, 1, 1, 1, 1})
 	if !matSame(cls, expect2) {
 		t.Error("Classify failed")
@@ -57,20 +57,20 @@ func TestLogRegr(t *testing.T) {
 	m.w = mat.NewDense(3, 1, []float64{0.03257874, 0.03791611, 0.00951759})
 	Y := mat.NewDense(5, 1, []float64{1, 0, 1, 1, 1})
 	expect3 := 0.38037
-	lss := m.loss(X, Y)
+	lss := m.Loss(X, Y)
 	if !close(lss, expect3) {
 		fmt.Printf("Loss was %f instead of %f\n", lss, expect3)
 		fmt.Println("X =")
-		matPrint(X)
+		MatPrint(X)
 		fmt.Println("Y =")
-		matPrint(Y)
+		MatPrint(Y)
 		fmt.Println("w =")
-		matPrint(m.w)
+		MatPrint(m.w)
 		t.Error("Loss failed")
 	}
 
 	// Test gradient
-	grads := m.gradient(X, Y)
+	grads := m.Gradient(X, Y)
 	expect4 := mat.NewDense(3, 1, []float64{-2.01265296, -1.66852372, -0.24798428})
 	if !matSame(grads, expect4) {
 		t.Error("gradient failed")

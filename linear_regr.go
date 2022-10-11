@@ -140,7 +140,7 @@ func linear_regression_demo() {
 	//func main() {
 
 	// Read data, split into X & Y
-	data, _ := ReadMatrixCSV("data/pizza_3_vars.txt")
+	data, _ := ReadMatrixCSV("../data/pizza_3_vars.txt")
 	X := ExtractCols(data, 0, 2) // all cols except last
 	Y := ExtractCols(data, 3, 3) // just the last col
 

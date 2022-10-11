@@ -19,12 +19,12 @@ func TestLinearRegression(t *testing.T) {
 
 	// Create and train linear regression model, check if coefficients match
 	m := LinearRegression{}
-	m.train(X, Y)
+	m.Train(X, Y)
 	if !matSame(m.w, expect) {
 		fmt.Println("Linear regression: got")
-		matPrint(m.w)
+		MatPrint(m.w)
 		fmt.Println("instead of")
-		matPrint(expect)
+		MatPrint(expect)
 		t.Error("Linear regression failed")
 	}
 }
