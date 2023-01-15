@@ -61,3 +61,37 @@ func IfThenElse(cond bool, a, b float64) float64 {
 		return b
 	}
 }
+
+// Is element in a list?
+func In[T int | int64 | float64 | byte | string](c T, s []T) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] == c {
+			return true
+		}
+	}
+	return false
+}
+
+// Unique values in a list
+func Unique[T int | int64 | float64 | byte | string](values []T) []T {
+
+	// Collect values found into a map
+	vals := map[T]int{}
+	for _, v := range values {
+		vals[v] = 1
+	}
+
+	// Turn the map into a list of strings
+	result := []T{}
+	for v, _ := range vals {
+		result = append(result, v)
+	}
+	return result
+}
+
+// Panic if a test condition is not true
+func Assert(cond bool, msg string) {
+	if !cond {
+		panic(msg)
+	}
+}
