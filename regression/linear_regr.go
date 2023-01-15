@@ -10,11 +10,12 @@
 // matPrint(m.w) // prints final coefficients
 // preds := m.predict(X) // make prediction
 
-package mlcode
+package regression
 
 import (
 	"fmt"
 	"math"
+	"mlcode/utils"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -136,13 +137,13 @@ func (m *LinearRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 }
 
 // Test/demo linear regression
-func linear_regression_demo() {
+func Linear_Regression_Demo() {
 	//func main() {
 
 	// Read data, split into X & Y
-	data, _ := ReadMatrixCSV("../data/pizza_3_vars.txt")
-	X := ExtractCols(data, 0, 2) // all cols except last
-	Y := ExtractCols(data, 3, 3) // just the last col
+	data, _ := utils.ReadMatrixCSV("../data/pizza_3_vars.txt")
+	X := utils.ExtractCols(data, 0, 2) // all cols except last
+	Y := utils.ExtractCols(data, 3, 3) // just the last col
 
 	// Create and train model
 	//w := trainLinRegr(X, Y, .001, .001, true)
@@ -152,10 +153,10 @@ func linear_regression_demo() {
 
 	// Show coefficients
 	fmt.Println("Final weights")
-	MatPrint(m.w) // prints final coefficients
+	utils.MatPrint(m.w) // prints final coefficients
 
 	// Make prediction
 	preds := m.Predict(X)
 	fmt.Println("Predictions:")
-	MatPrint(preds)
+	utils.MatPrint(preds)
 }

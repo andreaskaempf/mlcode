@@ -1,6 +1,6 @@
 // Utility functions, mainly for testing
 
-package mlcode
+package utils
 
 import (
 	"math"
@@ -14,7 +14,7 @@ func Sigmoid(z float64) float64 {
 }
 
 // Test whether two numbers are close
-func close(a, b float64) bool {
+func Close(a, b float64) bool {
 	if a == 0 && b == 0 {
 		return true
 	}
@@ -22,12 +22,12 @@ func close(a, b float64) bool {
 }
 
 // Test whether two lists of floats are the same
-func same(A, B []float64) bool {
+func Same(A, B []float64) bool {
 	if len(A) != len(B) {
 		return false
 	}
 	for i := 0; i < len(A); i++ {
-		if !close(A[i], B[i]) {
+		if !Close(A[i], B[i]) {
 			return false
 		}
 	}
@@ -36,7 +36,7 @@ func same(A, B []float64) bool {
 
 // Determine if two matrices are the same (or at least close)
 // TODO: You can actually use build-in function from mat for this
-func matSame(A, B mat.Matrix) bool {
+func MatSame(A, B mat.Matrix) bool {
 	ar, ac := A.Dims()
 	br, bc := B.Dims()
 	if ar != br || ac != bc {
@@ -44,7 +44,7 @@ func matSame(A, B mat.Matrix) bool {
 	}
 	for i := 0; i < ar; i++ {
 		for j := 0; j < ac; j++ {
-			if !close(A.At(i, j), B.At(i, j)) {
+			if !Close(A.At(i, j), B.At(i, j)) {
 				return false
 			}
 		}
@@ -54,7 +54,7 @@ func matSame(A, B mat.Matrix) bool {
 
 // Simple if-then-else operator, like a?b:c in C,
 // return a if condition is true, otherwise returns b
-func ifThenElse(cond bool, a, b float64) float64 {
+func IfThenElse(cond bool, a, b float64) float64 {
 	if cond {
 		return a
 	} else {

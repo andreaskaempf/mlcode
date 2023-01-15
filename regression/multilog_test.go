@@ -1,19 +1,20 @@
 // Unit tests for multi-class logistic regression
 
-package mlcode
+package regression
 
 import (
 	"fmt"
 	"testing"
 
 	"gonum.org/v1/gonum/mat"
+	"mlcode/utils"
 )
 
 // Test logistic regression calculations
 func TestMultiLogRegr(t *testing.T) {
 
 	// Create a model
-	m := MultiLogRegression{lr: .0001}
+	m := MultiLogRegression{LR: .0001}
 
 	// Set up input values
 	X := mat.NewDense(5, 3, []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15})
@@ -32,52 +33,52 @@ func TestMultiLogRegr(t *testing.T) {
 	expect1 := mat.NewDense(5, 2, []float64{0.5548, 0.5695, 0.6201, 0.6548,
 		0.6814, 0.7311, 0.7369, 0.7957, 0.7858, 0.8481})
 	fwd := m.Forward(X)
-	if !matSame(fwd, expect1) {
+	if !utils.MatSame(fwd, expect1) {
 		fmt.Println("forward(X) =")
-		MatPrint(fwd)
+		utils.MatPrint(fwd)
 		fmt.Println("expected:")
-		MatPrint(expect1)
+		utils.MatPrint(expect1)
 		t.Error("Forward failed")
 	}
 
 	// Test gradient(X, Y, w)
 	expect2 := mat.NewDense(3, 2, []float64{2.0779, 1.4579, 2.1537, 1.7777, 2.2295, 2.0975})
 	grad := m.Gradient(X, Y)
-	if !matSame(grad, expect2) {
+	if !utils.MatSame(grad, expect2) {
 		fmt.Println("gradient(X, Y, w) =")
-		MatPrint(grad)
+		utils.MatPrint(grad)
 		fmt.Println("expected:")
-		MatPrint(expect2)
+		utils.MatPrint(expect2)
 		t.Error("Gradient failed")
 	}
 
 	// Test scaling of gradient by learning rate
 	lr := .01
 	grad.Scale(lr, grad)
-	expect3 := mat.NewDense(3, 2, []float64{.0208, .0146, .0215, .0178, .0223, .0210})
+	expect3 := mat.NewDense(3, 2, []float64{0.0208, .0146, .0215, 0.0178, .0223, .0210})
 	if !mat.EqualApprox(grad, expect3, .001) {
 		fmt.Println("scaled gradient =")
-		MatPrint(grad)
+		utils.MatPrint(grad)
 		fmt.Println("expected:")
-		MatPrint(expect3)
+		utils.MatPrint(expect3)
 		t.Error("Scaling failed")
 	}
 
 	// Test adjustment of weights
 	m.w.Sub(m.w, grad)
 	expect4 := mat.NewDense(3, 2, []float64{-0.01077939, 0.00542152, 0.00846263, 0.02222302, 0.02770465, 0.03902453})
-	if !matSame(m.w, expect4) {
+	if !utils.MatSame(m.w, expect4) {
 		fmt.Println("adjusted w =")
-		MatPrint(m.w)
+		utils.MatPrint(m.w)
 		fmt.Println("expected:")
-		MatPrint(expect4)
+		utils.MatPrint(expect4)
 		t.Error("Adjustment failed")
 	}
 
 	// Test loss function
 	l := m.Loss(X, Y)
 	expect5 := 1.4269
-	if !close(l, expect5) {
+	if !utils.Close(l, expect5) {
 		fmt.Printf("Loss failed: got %f, expected %f\n", l, expect5)
 	}
 }

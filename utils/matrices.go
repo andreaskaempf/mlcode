@@ -2,7 +2,7 @@
 //
 // Utility functions for matrices using gonum
 
-package mlcode
+package utils
 
 import (
 	"encoding/csv"

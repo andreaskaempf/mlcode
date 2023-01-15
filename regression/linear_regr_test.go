@@ -1,12 +1,13 @@
 // Unit tests for linear regression
 
-package mlcode
+package regression
 
 import (
 	"fmt"
 	"testing"
 
 	"gonum.org/v1/gonum/mat"
+	"mlcode/utils"
 )
 
 // Test complete multivariate linear regression example
@@ -20,11 +21,11 @@ func TestLinearRegression(t *testing.T) {
 	// Create and train linear regression model, check if coefficients match
 	m := LinearRegression{}
 	m.Train(X, Y)
-	if !matSame(m.w, expect) {
+	if !utils.MatSame(m.w, expect) {
 		fmt.Println("Linear regression: got")
-		MatPrint(m.w)
+		utils.MatPrint(m.w)
 		fmt.Println("instead of")
-		MatPrint(expect)
+		utils.MatPrint(expect)
 		t.Error("Linear regression failed")
 	}
 }

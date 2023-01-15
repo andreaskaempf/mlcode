@@ -3,20 +3,21 @@
 // Based on Python implementation in Chapter 7 of "Programming Machine
 // Learning" by Paolo Perrotta
 
-package mlcode
+package regression
 
 import (
 	"fmt"
 	"math"
+	"mlcode/utils"
 
 	"gonum.org/v1/gonum/mat"
 )
 
 // Structure for a multi-class logistic regression model
 type MultiLogRegression struct {
-	lr         float64    // learning rate, e.g., .001
-	iterations int        // iterations to run
-	verbose    bool       // messages during train, default false
+	LR         float64    // learning rate, e.g., .001
+	Iterations int        // iterations to run
+	Verbose    bool       // messages during train, default false
 	w          *mat.Dense // vector of weights, set during training
 }
 
@@ -30,10 +31,10 @@ func (m *MultiLogRegression) Train(X, Y *mat.Dense) {
 	m.w = mat.NewDense(xc, yc, nil)
 
 	// Just repeat for given number of interations
-	for i := 0; i < m.iterations; i++ {
+	for i := 0; i < m.Iterations; i++ {
 
 		// Calculate loss (only for information purposes)
-		if m.verbose {
+		if m.Verbose {
 			l := m.Loss(X, Y)
 			fmt.Printf("Iteration %d: loss = %f\n", i, l)
 		}
@@ -41,7 +42,7 @@ func (m *MultiLogRegression) Train(X, Y *mat.Dense) {
 		// Adjust the weights (coefficients) using the gradients
 		// Python: w -= gradient(X, Y, w) * lr
 		grads := m.Gradient(X, Y)
-		grads.Scale(m.lr, grads)
+		grads.Scale(m.LR, grads)
 		m.w.Sub(m.w, grads)
 		//matPrint(m.w)
 	}
@@ -81,7 +82,7 @@ func (m *MultiLogRegression) Forward(X *mat.Dense) *mat.Dense {
 
 	// return sigmoid(weighted_sum) -- must be vectorized
 	res.Apply(func(i, j int, v float64) float64 {
-		return Sigmoid(v)
+		return utils.Sigmoid(v)
 	}, res)
 
 	return res
@@ -116,7 +117,8 @@ func (m *MultiLogRegression) Loss(X, Y *mat.Dense) float64 {
 // Predict (classify) given matrix of features and vector of weights
 // (coefficients)
 // Python: labels = np.argmax(y_hat, axis=1)
-//         return labels.reshape(-1, 1)
+//
+//	return labels.reshape(-1, 1)
 func (m *MultiLogRegression) Classify(X *mat.Dense) *mat.Dense {
 
 	// Just predict forward, and return a vector of the column numbers
@@ -125,7 +127,7 @@ func (m *MultiLogRegression) Classify(X *mat.Dense) *mat.Dense {
 	rows, _ := preds.Dims()
 	result := mat.NewDense(rows, 1, nil) // TODO: Avoid allocating each time?
 	for r := 0; r < rows; r++ {
-		result.Set(r, 0, float64(MaxCol(preds, r)))
+		result.Set(r, 0, float64(utils.MaxCol(preds, r)))
 	}
 	return result
 }

@@ -12,13 +12,13 @@
 //	m.train(X, Y) // train the model
 //	matPrint(m.w)  // show resulting coefficients
 
-package mlcode
+package regression
 
 import (
 	"fmt"
-	"math"
-
 	"gonum.org/v1/gonum/mat"
+	"math"
+	"mlcode/utils"
 )
 
 // Structure for a logistic regression model
@@ -78,7 +78,7 @@ func (m *LogisticRegression) Forward(X *mat.Dense) *mat.Dense {
 
 	// return sigmoid(weighted_sum) -- must be vectorized
 	res.Apply(func(i, j int, v float64) float64 {
-		return Sigmoid(v)
+		return utils.Sigmoid(v)
 	}, res)
 	return res
 }
@@ -139,24 +139,20 @@ func (m *LogisticRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 }
 
 // Function to demonstrate logistic regression
-func logistic_regression_demo() {
+func Logistic_Regression_Demo() {
 
 	// Read data into matrix, separate X and Y
-	data, _ := ReadMatrixCSV("../data/police.txt")
-	X := ExtractCols(data, 0, 2) // all cols except last
-	Y := ExtractCols(data, 3, 3) // just the last col
+	data, _ := utils.ReadMatrixCSV("../data/police.txt")
+	X := utils.ExtractCols(data, 0, 2) // all cols except last
+	Y := utils.ExtractCols(data, 3, 3) // just the last col
 	fmt.Println("X =")
-	MatPrint(X)
+	utils.MatPrint(X)
 	fmt.Println("Y =")
-	MatPrint(Y)
+	utils.MatPrint(Y)
 
 	// Train logistic regression model
 	m := LogisticRegression{verbose: true}
 	m.Train(X, Y)
 	fmt.Println("\nFinal coefficients:")
-	MatPrint(m.w)
+	utils.MatPrint(m.w)
 }
-
-/*func main() {
-    logistic_regression_demo()
-} */

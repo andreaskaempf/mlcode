@@ -1,6 +1,6 @@
 // Testing for simple neural network code
 
-package mlcode
+package neural_net
 
 import (
 	"testing"

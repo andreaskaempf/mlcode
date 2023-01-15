@@ -5,7 +5,7 @@
 //
 // AK, 27/09/2022
 
-package mlcode
+package neural_net
 
 import (
 	"compress/gzip"
@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"gonum.org/v1/gonum/mat"
+	"mlcode/regression"
 )
 
 // Demonstration of logistic regression on MNIST digits data, achieves 95%
@@ -46,7 +47,7 @@ func MnistDemo() {
 	//m.train(pics1, labs1)
 
 	// Train multi-class classifier using 10-column one-hot encoded labels
-	m := MultiLogRegression{iterations: 100, lr: 1e-5, verbose: true}
+	m := regression.MultiLogRegression{Iterations: 100, LR: 1e-5, Verbose: true}
 	m.Train(pics, labs1)
 
 	// Predict on test data, measure simple accuracy

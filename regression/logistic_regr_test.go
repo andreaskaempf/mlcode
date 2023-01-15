@@ -1,12 +1,13 @@
 // Unit tests for logistic regression
 
-package mlcode
+package regression
 
 import (
 	"fmt"
 	"testing"
 
 	"gonum.org/v1/gonum/mat"
+	"mlcode/utils"
 )
 
 // Test logistic regression calculations
@@ -17,8 +18,8 @@ func TestLogRegr(t *testing.T) {
 	try := []float64{0, .25, .50, 1}
 	expect := []float64{.5, .562, .622, .731}
 	for i := 0; i < len(try); i++ {
-		if !close(Sigmoid(try[i]), expect[i]) {
-			fmt.Printf("sigmoid(%f) produced %f instead of %f\n", try[i], Sigmoid(try[i]), expect[i])
+		if !utils.Close(utils.Sigmoid(try[i]), expect[i]) {
+			fmt.Printf("sigmoid(%f) produced %f instead of %f\n", try[i], utils.Sigmoid(try[i]), expect[i])
 			t.Error("Sigmoid failed")
 		}
 	}
@@ -34,22 +35,22 @@ func TestLogRegr(t *testing.T) {
 	// Test forward()
 	expect1 := mat.NewDense(5, 1, []float64{.827, .664, .787, .867, .814})
 	fwd := m.Forward(X)
-	if !matSame(fwd, expect1) {
+	if !utils.MatSame(fwd, expect1) {
 		fmt.Println("X =")
-		MatPrint(X)
+		utils.MatPrint(X)
 		fmt.Println("w =")
-		MatPrint(m.w)
+		utils.MatPrint(m.w)
 		fmt.Println("forward(X) =")
-		MatPrint(fwd)
+		utils.MatPrint(fwd)
 		fmt.Println("expected:")
-		MatPrint(expect1)
+		utils.MatPrint(expect1)
 		t.Error("Forward failed")
 	}
 
 	// Test classify, based on previous forward values
 	cls := m.Classify(X)
 	expect2 := mat.NewDense(5, 1, []float64{1, 1, 1, 1, 1})
-	if !matSame(cls, expect2) {
+	if !utils.MatSame(cls, expect2) {
 		t.Error("Classify failed")
 	}
 
@@ -58,21 +59,21 @@ func TestLogRegr(t *testing.T) {
 	Y := mat.NewDense(5, 1, []float64{1, 0, 1, 1, 1})
 	expect3 := 0.38037
 	lss := m.Loss(X, Y)
-	if !close(lss, expect3) {
+	if !utils.Close(lss, expect3) {
 		fmt.Printf("Loss was %f instead of %f\n", lss, expect3)
 		fmt.Println("X =")
-		MatPrint(X)
+		utils.MatPrint(X)
 		fmt.Println("Y =")
-		MatPrint(Y)
+		utils.MatPrint(Y)
 		fmt.Println("w =")
-		MatPrint(m.w)
+		utils.MatPrint(m.w)
 		t.Error("Loss failed")
 	}
 
 	// Test gradient
 	grads := m.Gradient(X, Y)
 	expect4 := mat.NewDense(3, 1, []float64{-2.01265296, -1.66852372, -0.24798428})
-	if !matSame(grads, expect4) {
+	if !utils.MatSame(grads, expect4) {
 		t.Error("gradient failed")
 	}
 
@@ -81,7 +82,7 @@ func TestLogRegr(t *testing.T) {
 	grads.Scale(m.lr, grads)
 	m.w.Sub(m.w, grads)
 	expect5 := mat.NewDense(3, 1, []float64{0.03459139, 0.03958463, 0.00976558})
-	if !matSame(m.w, expect5) {
+	if !utils.MatSame(m.w, expect5) {
 		t.Error("gradient failed")
 	}
 }
