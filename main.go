@@ -1,3 +1,7 @@
+// main.go
+//
+// Driver for demonstrating/testing the various machine learning models
+
 package main
 
 import (
@@ -15,7 +19,7 @@ func main() {
 	if len(os.Args) > 1 {
 		arg = os.Args[1]
 	}
-	//arg = "dectree" // uncomment for debugging
+	arg = "dectree" // uncomment for debugging
 
 	// Run selected demo, or show error message
 	if arg == "linear" {
@@ -28,8 +32,8 @@ func main() {
 		fmt.Println("Running MNIST demo")
 		neural_net.MnistDemo()
 	} else if arg == "dectree" {
-		fmt.Println("Running decision tree demo")
-		decision_tree.DecisionTreeDemo()
+		fmt.Println("Running decision tree demo (titanic)")
+		decision_tree.DecisionTreeDemo2()
 	} else {
 		fmt.Println("Specify: linear, logistic, neural, or dectree")
 	}

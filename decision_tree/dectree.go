@@ -12,15 +12,16 @@ import (
 // Node in a decision tree
 type Node struct {
 	SplitVar    string  // column name
-	SplitVal    float64 // number to split at
+	SplitNum    float64 // number to split at
+	SplitCat    string  // or string to split on
 	G           float64 // gini index at this point
 	Left, Right *Node   // left and right nodes for decision
 	Value       string  // terminal value if a leaf
 }
 
 // Parameters for learning (TODO: don't hard-code)
-const MaxDepth = 3 // Maximum depth for a tree
-const MinLeaf = 20 // Minimum size of a leaf
+var MaxDepth = 3 // Maximum depth for a tree
+var MinLeaf = 20 // Minimum size of a leaf
 
 // Demo of the decision tree classifier, using the Iris dataset
 // (text labels, all other variables floating point)
@@ -63,9 +64,23 @@ func DecisionTreeDemo2() {
 	}
 
 	// Remove some columns we don't need for the model
-	df = df.DropColumns([]string{"PassengerId", "Name"})
+	// TODO: use just the first column of cabin number
+	// TODO: tree print is comparing "Age" and "Fare" to "male"!
+	df = df.DropColumns([]string{"PassengerId", "Name", "Ticket"})
 
-	// Create a decision tree
+	// Turn "Survived" column into a string
+	surv := df.GetColumn("Survived")
+	utils.Assert(surv.Dtype == "int64" && len(surv.Ints) > 0 && len(surv.Strings) == 0, "Survived malformed")
+	for _, si := range surv.Ints {
+		yesNo := utils.IfThenElse(si == 1, "Yes", "No")
+		surv.Strings = append(surv.Strings, yesNo)
+	}
+	surv.Ints = nil
+	surv.Dtype = "string"
+
+	// Create a decision tree to predict survival
+	MaxDepth = 10
+	MinLeaf = 5 // TODO: if this is too low, crashes on Titanic data set
 	tree := DecisionTree(df, "Survived", 0)
 	PrintTree(tree, 0)
 
@@ -74,7 +89,7 @@ func DecisionTreeDemo2() {
 	for i := 0; i < df.NRows(); i++ {
 		row := df.GetRow(i)
 		pred := Predict(tree, row)
-		actual := row.GetColumn("Survived").Ints[0]
+		actual := row.GetColumn("Survived").Strings[0]
 		if pred == actual {
 			correct++
 		}
@@ -99,8 +114,9 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 
 	// Define all possible splits, based on each attribute
 	// and find the one that produces the lowest Gini Index
-	var bestCol string
-	var bestSplit float64
+	var bestCol string       // best column to split on
+	var bestSplitNum float64 // value if numeric split
+	var bestSplitCat string  // value if categorical split
 	var bestGini float64 = 1
 	var bestLeft, bestRight *dataframe.DataFrame
 	for _, c := range *df {
@@ -111,7 +127,7 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 		}
 
 		// If the column is numeric, test splits at midpints between
-		// all values (TODO: ints, strings)
+		// all values (TODO: ints)
 		if c.Dtype == "float64" {
 			splits := midPoints(c.Floats)
 			for _, split := range splits {
@@ -122,7 +138,22 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 				if G < bestGini {
 					bestGini = G
 					bestCol = c.Name
-					bestSplit = split
+					bestSplitNum = split
+					bestLeft = left
+					bestRight = right
+				}
+			}
+		} else if c.Dtype == "string" { // split on categorical variable
+			splits := utils.Unique(c.Strings) // all possible values
+			for _, split := range splits {
+				left, right := splitCategorical(*df, c.Name, split)
+				leftLabels := left.GetColumn(depv).Strings
+				rightLabels := right.GetColumn(depv).Strings
+				G := giniCombined(leftLabels, rightLabels)
+				if G < bestGini {
+					bestGini = G
+					bestCol = c.Name
+					bestSplitCat = split
 					bestLeft = left
 					bestRight = right
 				}
@@ -131,9 +162,14 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 	}
 
 	// Using the best split found, recursively do left and right sides
-	fmt.Println(level, ": n =", df.NRows(), ", best split on", bestCol,
-		"at", bestSplit, "=> Gini", bestGini)
-	n := Node{SplitVar: bestCol, SplitVal: bestSplit, G: bestGini}
+	fmt.Println(level, ": n =", df.NRows(), ", best split on", bestCol, "at")
+	if len(bestSplitCat) > 0 {
+		fmt.Printf("\"%s\"", bestSplitCat)
+	} else {
+		fmt.Print(bestSplitNum)
+	}
+	fmt.Println("=> Gini", bestGini)
+	n := Node{SplitVar: bestCol, SplitNum: bestSplitNum, SplitCat: bestSplitCat, G: bestGini}
 	n.Left = DecisionTree(bestLeft, depv, level+1)
 	n.Right = DecisionTree(bestRight, depv, level+1)
 	return &n
@@ -160,6 +196,27 @@ func splitNumeric(df dataframe.DataFrame, colName string, split float64) (*dataf
 	return left, right
 }
 
+// Split a dataframe on a categorical (string) column, into two dataframes,
+// left for equal, right for not equal
+func splitCategorical(df dataframe.DataFrame, colName string, split string) (*dataframe.DataFrame, *dataframe.DataFrame) {
+
+	// Make two empty dataframes with same columns
+	left := df.CopyStructure()
+	right := df.CopyStructure()
+
+	// Copy rows to the appropriate dataframe, based on splits
+	splitCol := df.GetColumn(colName) // the column to split on
+	for i := 0; i < df.NRows(); i++ {
+		if splitCol.Strings[i] == split {
+			left.CopyRow(&df, i)
+		} else {
+			right.CopyRow(&df, i)
+		}
+	}
+
+	return left, right
+}
+
 // Predict from a decision tree, return predicted label
 func Predict(tree *Node, row *dataframe.DataFrame) string {
 
@@ -169,12 +226,25 @@ func Predict(tree *Node, row *dataframe.DataFrame) string {
 	}
 
 	// Otherwise evaluate the split
-	// TODO: ints and strings
-	val := row.GetColumn(tree.SplitVar).Floats[0]
-	if val < tree.SplitVal {
-		return Predict(tree.Left, row)
+	// TODO: ints
+	col := row.GetColumn(tree.SplitVar)
+	if col.Dtype == "string" {
+		val := col.Strings[0]
+		if val == tree.SplitCat {
+			return Predict(tree.Left, row)
+		} else {
+			return Predict(tree.Right, row)
+		}
+	} else if col.Dtype == "float64" {
+		val := col.Floats[0]
+		if val < tree.SplitNum {
+			return Predict(tree.Left, row)
+		} else {
+			return Predict(tree.Right, row)
+		}
 	} else {
-		return Predict(tree.Right, row)
+		fmt.Println("TODO: Skipping prediction on", col.Dtype)
+		return "error"
 	}
 }
 
@@ -186,7 +256,11 @@ func PrintTree(tree *Node, level int) {
 	if len(tree.Value) > 0 {
 		fmt.Println("-->", tree.Value)
 	} else {
-		fmt.Println(tree.SplitVar, "<", tree.SplitVal)
+		if len(tree.SplitCat) > 0 {
+			fmt.Printf("%s == \"%s\"\n", tree.SplitVar, tree.SplitCat)
+		} else {
+			fmt.Printf("%s < %.2f\n", tree.SplitVar, tree.SplitNum)
+		}
 		PrintTree(tree.Left, level+1)
 		PrintTree(tree.Right, level+1)
 	}

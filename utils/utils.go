@@ -54,7 +54,7 @@ func MatSame(A, B mat.Matrix) bool {
 
 // Simple if-then-else operator, like a?b:c in C,
 // return a if condition is true, otherwise returns b
-func IfThenElse(cond bool, a, b float64) float64 {
+func IfThenElse[T int | int64 | float64 | byte | string](cond bool, a, b T) T {
 	if cond {
 		return a
 	} else {

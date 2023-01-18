@@ -7,6 +7,7 @@ package dataframe
 import (
 	"encoding/csv"
 	"errors"
+	"fmt"
 	"math"
 	"mlcode/utils"
 	"os"
@@ -132,9 +133,10 @@ func (df *DataFrame) NRows() int {
 
 // Get one column from a dataframe
 func (df *DataFrame) GetColumn(name string) *Series {
-	for _, s := range *df {
+	for i := 0; i < len(*df); i++ {
+		s := &(*df)[i]
 		if s.Name == name {
-			return &s
+			return s
 		}
 	}
 	return nil
@@ -190,4 +192,12 @@ func (df *DataFrame) GetRow(row int) *DataFrame {
 		df2 = append(df2, col)
 	}
 	return &df2
+}
+
+// Show summary, i.e., number of rows, column descriptors
+func (df *DataFrame) Summary() {
+	fmt.Printf("Dataframe with %d rows, %d cols:\n", df.NRows(), len(*df))
+	for _, c := range *df {
+		fmt.Println(" ", c.Name, c.Dtype)
+	}
 }
