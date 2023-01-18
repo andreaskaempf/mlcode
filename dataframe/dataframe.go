@@ -26,6 +26,10 @@ type Series struct {
 	Strings []string
 }
 
+// Values to use for missing
+var MISSING_INT int64 = math.MaxInt64
+var MISSING_FLOAT float64 = math.MaxFloat64
+
 // Read CSV file into a data frame, with columns as integers, float64, or strings,
 // missing values set to maximum in or float
 func ReadCSV(filename string) (*DataFrame, error) {
@@ -39,6 +43,7 @@ func ReadCSV(filename string) (*DataFrame, error) {
 	// Read CSV file, populate columns as strings for now
 	df := DataFrame{} // new, empty data frame
 	r := csv.NewReader(f)
+	line_no := 0
 	for {
 
 		// Read next line of CSV file, stop if end of file
@@ -46,6 +51,7 @@ func ReadCSV(filename string) (*DataFrame, error) {
 		if err != nil {
 			break
 		}
+		line_no++
 
 		// If first line, populate the data frame
 		if len(df) == 0 { // no columns yet
@@ -54,6 +60,9 @@ func ReadCSV(filename string) (*DataFrame, error) {
 				df = append(df, col)
 			}
 		} else {
+			if len(l) != len(df) {
+				fmt.Println("WARNING: row %d has %d instead of %d columns, ignored\n", line_no, len(l), len(df))
+			}
 			for i, c := range l {
 				df[i].Strings = append(df[i].Strings, c)
 			}
@@ -68,8 +77,6 @@ func ReadCSV(filename string) (*DataFrame, error) {
 		allFloats := true
 		ints := []int64{}
 		floats := []float64{}
-		MISSING_INT := int64(math.MaxInt64)
-		MISSING_FLOAT := math.MaxFloat64
 		for _, c := range df[i].Strings {
 
 			// Try int

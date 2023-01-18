@@ -58,14 +58,15 @@ func DecisionTreeDemo() {
 func DecisionTreeDemo2() {
 
 	// Read data set from CSV file
+	dataframe.MISSING_INT = -1
+	dataframe.MISSING_FLOAT = -1.0
 	df, err := dataframe.ReadCSV("data/titanic.csv")
 	if err != nil {
 		panic(err)
 	}
 
 	// Remove some columns we don't need for the model
-	// TODO: use just the first column of cabin number
-	// TODO: tree print is comparing "Age" and "Fare" to "male"!
+	// TODO: Drop rows with missing nulls?
 	df = df.DropColumns([]string{"PassengerId", "Name", "Ticket"})
 
 	// Turn "Survived" column into a string
@@ -77,6 +78,14 @@ func DecisionTreeDemo2() {
 	}
 	surv.Ints = nil
 	surv.Dtype = "string"
+
+	// Replace Cabin with just the first letter (would indicate class?)
+	cabin := df.GetColumn("Cabin")
+	for i, c := range cabin.Strings {
+		if len(c) > 1 {
+			cabin.Strings[i] = c[:1]
+		}
+	}
 
 	// Create a decision tree to predict survival
 	MaxDepth = 10
@@ -139,6 +148,7 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 					bestGini = G
 					bestCol = c.Name
 					bestSplitNum = split
+					bestSplitCat = ""
 					bestLeft = left
 					bestRight = right
 				}
@@ -153,6 +163,7 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 				if G < bestGini {
 					bestGini = G
 					bestCol = c.Name
+					bestSplitNum = 0 // n/a
 					bestSplitCat = split
 					bestLeft = left
 					bestRight = right
@@ -161,14 +172,16 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 		}
 	}
 
-	// Using the best split found, recursively do left and right sides
-	fmt.Println(level, ": n =", df.NRows(), ", best split on", bestCol, "at")
+	// Show the best split found
+	fmt.Printf("%d: n = %d, best split on %s at ", level, df.NRows(), bestCol)
 	if len(bestSplitCat) > 0 {
 		fmt.Printf("\"%s\"", bestSplitCat)
 	} else {
 		fmt.Print(bestSplitNum)
 	}
-	fmt.Println("=> Gini", bestGini)
+	fmt.Println(" => Gini", bestGini)
+
+	// Using the best split found, recursively do left and right sides
 	n := Node{SplitVar: bestCol, SplitNum: bestSplitNum, SplitCat: bestSplitCat, G: bestGini}
 	n.Left = DecisionTree(bestLeft, depv, level+1)
 	n.Right = DecisionTree(bestRight, depv, level+1)
