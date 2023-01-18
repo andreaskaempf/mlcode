@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"mlcode/dataframe"
 	"mlcode/utils"
-	"sort"
 )
 
 // Node in a decision tree
@@ -19,7 +18,8 @@ type Node struct {
 	Value       string  // terminal value if a leaf
 }
 
-// Parameters for learning (TODO: don't hard-code)
+// Parameters for learning, default values may be changed
+// before training tree
 var MaxDepth = 3 // Maximum depth for a tree
 var MinLeaf = 20 // Minimum size of a leaf
 
@@ -66,7 +66,7 @@ func DecisionTreeDemo2() {
 	}
 
 	// Remove some columns we don't need for the model
-	// TODO: Drop rows with missing nulls?
+	// TODO: Drop rows with missing values
 	df = df.DropColumns([]string{"PassengerId", "Name", "Ticket"})
 
 	// Turn "Survived" column into a string
@@ -86,12 +86,19 @@ func DecisionTreeDemo2() {
 			cabin.Strings[i] = c[:1]
 		}
 	}
+	if !df.Check() {
+		return
+	}
 
 	// Create a decision tree to predict survival
-	MaxDepth = 200
-	MinLeaf = 1
+	MaxDepth = 10
+	MinLeaf = 5
 	tree := DecisionTree(df, "Survived", 0)
 	PrintTree(tree, 0)
+
+	if !df.Check() {
+		return
+	}
 
 	// Make predictions
 	correct := 0
@@ -136,9 +143,14 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 		}
 
 		// If the column is numeric, test splits at midpints between
-		// all values (TODO: ints)
-		if c.Dtype == "float64" {
-			splits := midPoints(c.Floats)
+		// all values
+		if c.Dtype == "float64" || c.Dtype == "int64" {
+			var splits []float64
+			if c.Dtype == "float64" {
+				splits = midPoints(c.Floats)
+			} else if c.Dtype == "int64" {
+				splits = midPoints(c.Ints)
+			}
 			for _, split := range splits {
 				left, right := splitNumeric(*df, c.Name, split)
 				leftLabels := left.GetColumn(depv).Strings
@@ -175,6 +187,8 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 					bestRight = right
 				}
 			}
+		} else {
+			fmt.Println("Warning: column ignored, type", c.Dtype)
 		}
 	}
 
@@ -210,13 +224,26 @@ func splitNumeric(df dataframe.DataFrame, colName string, split float64) (*dataf
 	// Copy rows to the appropriate dataframe, based on splits
 	splitCol := df.GetColumn(colName) // the column to split on
 	for i := 0; i < df.NRows(); i++ {
-		if splitCol.Floats[i] < split {
+
+		// Determine if this row is less than cut-off, depends on type
+		var splitLeft bool
+		if splitCol.Dtype == "float64" {
+			splitLeft = splitCol.Floats[i] < split
+		} else if splitCol.Dtype == "int64" {
+			splitLeft = float64(splitCol.Ints[i]) < split
+		} else {
+			panic("splitNumeric: invalid data type " + splitCol.Dtype)
+		}
+
+		// Copy to left or right
+		if splitLeft {
 			left.CopyRow(&df, i)
 		} else {
 			right.CopyRow(&df, i)
 		}
 	}
 
+	// Return the left and right splits
 	return left, right
 }
 
@@ -250,26 +277,29 @@ func Predict(tree *Node, row *dataframe.DataFrame) string {
 	}
 
 	// Otherwise evaluate the split
-	// TODO: ints
 	col := row.GetColumn(tree.SplitVar)
+	var predLeft bool
 	if col.Dtype == "string" {
 		val := col.Strings[0]
-		if val == tree.SplitCat {
-			return Predict(tree.Left, row)
-		} else {
-			return Predict(tree.Right, row)
-		}
+		predLeft = val == tree.SplitCat
 	} else if col.Dtype == "float64" {
 		val := col.Floats[0]
-		if val < tree.SplitNum {
-			return Predict(tree.Left, row)
-		} else {
-			return Predict(tree.Right, row)
-		}
+		predLeft = val < tree.SplitNum
+	} else if col.Dtype == "int64" {
+		val := float64(col.Ints[0])
+		predLeft = val < tree.SplitNum
 	} else {
 		fmt.Println("TODO: Skipping prediction on", col.Dtype)
 		return "error"
 	}
+
+	// Proceed to left or right branch
+	if predLeft {
+		return Predict(tree.Left, row)
+	} else {
+		return Predict(tree.Right, row)
+	}
+
 }
 
 // Print decision tree
@@ -318,14 +348,14 @@ func giniIndex(labels []string) float64 {
 	return gini
 }
 
-// For a list of numbers, return a list that is the midpoints
-// between each consecutive pair
-func midPoints(nums []float64) []float64 {
-	nums = utils.Unique(nums) // remove duplicates
-	sort.Float64s(nums)       // sort ascending
+// For a list of numbers (integer or float), return a list that is the
+// midpoints between each consecutive pair; result is always list of floats,
+// even if you pass it a list of ints, since mid-points need to be floats.
+func midPoints[T float64 | int64](nums []T) []float64 {
+	nums = utils.Unique(nums) // remove duplicates, sorted
 	res := []float64{}
 	for i := 1; i < len(nums); i++ {
-		mid := nums[i-1] + (nums[i]-nums[i-1])/2
+		mid := float64(nums[i-1]) + float64(nums[i]-nums[i-1])/2.0
 		res = append(res, mid)
 	}
 	return res

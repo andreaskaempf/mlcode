@@ -171,6 +171,7 @@ func (df *DataFrame) CopyStructure() *DataFrame {
 
 // Copy a row from one dataframe to another, assumes both
 // have the same structure (i.e., column types)
+// TODO: Can we avoid all the pointers?
 func (dest *DataFrame) CopyRow(src *DataFrame, row int) {
 	for c := 0; c < len(*src); c++ {
 		if (*src)[c].Dtype == "string" {
@@ -179,6 +180,8 @@ func (dest *DataFrame) CopyRow(src *DataFrame, row int) {
 			(*dest)[c].Ints = append((*dest)[c].Ints, (*src)[c].Ints[row])
 		} else if (*src)[c].Dtype == "float64" {
 			(*dest)[c].Floats = append((*dest)[c].Floats, (*src)[c].Floats[row])
+		} else {
+			panic("CopyRow: invalid data type " + (*src)[c].Dtype)
 		}
 	}
 }
@@ -192,9 +195,11 @@ func (df *DataFrame) GetRow(row int) *DataFrame {
 		if src.Dtype == "string" {
 			col.Strings = append(col.Strings, src.Strings[row])
 		} else if src.Dtype == "int64" {
-			src.Ints = append(col.Ints, src.Ints[row])
-		} else if (*df)[c].Dtype == "float64" {
+			col.Ints = append(col.Ints, src.Ints[row])
+		} else if src.Dtype == "float64" {
 			col.Floats = append(col.Floats, src.Floats[row])
+		} else {
+			panic("GetRow: invalid column type")
 		}
 		df2 = append(df2, col)
 	}
@@ -207,4 +212,41 @@ func (df *DataFrame) Summary() {
 	for _, c := range *df {
 		fmt.Println(" ", c.Name, c.Dtype)
 	}
+}
+
+// Check a dataframe for validity
+func (df *DataFrame) Check() bool {
+
+	// Check each column for type, invalid data
+	nrows := df.NRows()
+	ok := true
+	for _, c := range *df {
+		ns := len(c.Strings)
+		ni := len(c.Ints)
+		nf := len(c.Floats)
+		var nd int
+		var invalid bool
+		if c.Dtype == "string" {
+			invalid = nf > 0 || ni > 0
+			nd = ns
+		} else if c.Dtype == "float64" {
+			invalid = ns > 0 || ni > 0
+			nd = nf
+		} else if c.Dtype == "int64" {
+			invalid = ns > 0 || nf > 0
+			nd = ni
+		} else {
+			fmt.Println("WARNING: Column", c.Name, "has invalid type", c.Dtype)
+			ok = false
+		}
+		if invalid {
+			fmt.Println("WARNING:", c.Dtype, "column", c.Name, "has values of another type")
+			ok = false
+		}
+		if nd != nrows {
+			fmt.Println("WARNING: column", c.Name, "has invalid number of rows")
+			ok = false
+		}
+	}
+	return ok
 }

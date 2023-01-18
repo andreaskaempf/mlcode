@@ -4,6 +4,7 @@ package utils
 
 import (
 	"math"
+	"sort"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -72,7 +73,7 @@ func In[T int | int64 | float64 | byte | string](c T, s []T) bool {
 	return false
 }
 
-// Unique values in a list
+// Unique values in a list, sorted
 func Unique[T int | int64 | float64 | byte | string](values []T) []T {
 
 	// Collect values found into a map
@@ -81,11 +82,16 @@ func Unique[T int | int64 | float64 | byte | string](values []T) []T {
 		vals[v] = 1
 	}
 
-	// Turn the map into a list of strings
+	// Turn the map into a list
 	result := []T{}
 	for v, _ := range vals {
 		result = append(result, v)
 	}
+
+	// Sort the list
+	sort.Slice(result, func(i, j int) bool {
+		return result[i] < result[j]
+	})
 	return result
 }
 
