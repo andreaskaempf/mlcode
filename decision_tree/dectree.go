@@ -88,8 +88,8 @@ func DecisionTreeDemo2() {
 	}
 
 	// Create a decision tree to predict survival
-	MaxDepth = 10
-	MinLeaf = 5 // TODO: if this is too low, crashes on Titanic data set
+	MaxDepth = 200
+	MinLeaf = 1
 	tree := DecisionTree(df, "Survived", 0)
 	PrintTree(tree, 0)
 
@@ -118,7 +118,7 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 	// 3. no more variation
 	dcol := df.GetColumn(depv)
 	if df.NRows() < MinLeaf || level >= MaxDepth || giniIndex(dcol.Strings) == 0 {
-		return &Node{Value: mostCommon(dcol.Strings)}
+		return &Node{Value: utils.MostCommon(dcol.Strings)}
 	}
 
 	// Define all possible splits, based on each attribute
@@ -143,6 +143,9 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 				left, right := splitNumeric(*df, c.Name, split)
 				leftLabels := left.GetColumn(depv).Strings
 				rightLabels := right.GetColumn(depv).Strings
+				if len(leftLabels) == 0 || len(rightLabels) == 0 {
+					continue
+				}
 				G := giniCombined(leftLabels, rightLabels)
 				if G < bestGini {
 					bestGini = G
@@ -159,6 +162,9 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 				left, right := splitCategorical(*df, c.Name, split)
 				leftLabels := left.GetColumn(depv).Strings
 				rightLabels := right.GetColumn(depv).Strings
+				if len(leftLabels) == 0 || len(rightLabels) == 0 {
+					continue
+				}
 				G := giniCombined(leftLabels, rightLabels)
 				if G < bestGini {
 					bestGini = G
@@ -172,8 +178,13 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 		}
 	}
 
+	// If there was no meaningful split found, return a terminal node
+	if len(bestCol) == 0 {
+		return &Node{Value: utils.MostCommon(dcol.Strings)}
+	}
+
 	// Show the best split found
-	fmt.Printf("%d: n = %d, best split on %s at ", level, df.NRows(), bestCol)
+	fmt.Printf("Depth %2d: n = %d, best split on %s at ", level, df.NRows(), bestCol)
 	if len(bestSplitCat) > 0 {
 		fmt.Printf("\"%s\"", bestSplitCat)
 	} else {
@@ -318,19 +329,4 @@ func midPoints(nums []float64) []float64 {
 		res = append(res, mid)
 	}
 	return res
-}
-
-// Find the most common value in a list of strings
-func mostCommon(ss []string) string {
-	counts := map[string]int{}
-	var highestCount int
-	var mostFreq string
-	for _, s := range ss {
-		counts[s]++
-		if counts[s] > highestCount {
-			highestCount = counts[s]
-			mostFreq = s
-		}
-	}
-	return mostFreq
 }

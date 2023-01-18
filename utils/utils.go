@@ -89,6 +89,30 @@ func Unique[T int | int64 | float64 | byte | string](values []T) []T {
 	return result
 }
 
+// Find the most common value in a list
+func MostCommon[T int | int64 | float64 | byte | string](ss []T) T {
+	counts := map[T]int{}
+	var highestCount int
+	var mostFreq T
+	for _, s := range ss {
+		counts[s]++
+		if counts[s] > highestCount {
+			highestCount = counts[s]
+			mostFreq = s
+		}
+	}
+	return mostFreq
+}
+
+// Determine if all elements in a list are the same
+func allSame[T int | int64 | float64 | byte | string](labels []T) bool {
+	classCount := map[T]int{}
+	for _, l := range labels {
+		classCount[l]++
+	}
+	return len(classCount) == 1
+}
+
 // Panic if a test condition is not true
 func Assert(cond bool, msg string) {
 	if !cond {
