@@ -20,8 +20,9 @@ type Node struct {
 
 // Parameters for learning, default values may be changed
 // before training tree
-var MaxDepth = 3 // Maximum depth for a tree
-var MinLeaf = 20 // Minimum size of a leaf
+var MaxDepth = 3    // Maximum depth for a tree
+var MinLeaf = 20    // Minimum size of a leaf
+var Verbose = false // whether to show progress messages
 
 // Demo of the decision tree classifier, using the Iris dataset
 // (text labels, all other variables floating point)
@@ -57,42 +58,17 @@ func DecisionTreeDemo() {
 // are mix of text, integer, and floating point)
 func DecisionTreeDemo2() {
 
-	// Read data set from CSV file
-	dataframe.MISSING_INT = -1
-	dataframe.MISSING_FLOAT = -1.0
-	df, err := dataframe.ReadCSV("data/titanic.csv")
-	if err != nil {
-		panic(err)
-	}
-
-	// Remove some columns we don't need for the model
-	// TODO: Drop rows with missing values
-	df = df.DropColumns([]string{"PassengerId", "Name", "Ticket"})
-
-	// Turn "Survived" column into a string
-	surv := df.GetColumn("Survived")
-	utils.Assert(surv.Dtype == "int64" && len(surv.Ints) > 0 && len(surv.Strings) == 0, "Survived malformed")
-	for _, si := range surv.Ints {
-		yesNo := utils.IfThenElse(si == 1, "Yes", "No")
-		surv.Strings = append(surv.Strings, yesNo)
-	}
-	surv.Ints = nil
-	surv.Dtype = "string"
-
-	// Replace Cabin with just the first letter (would indicate class?)
-	cabin := df.GetColumn("Cabin")
-	for i, c := range cabin.Strings {
-		if len(c) > 1 {
-			cabin.Strings[i] = c[:1]
-		}
-	}
+	// Read Titanic data set from CSV file
+	df := GetTitanicData("data/titanic.csv")
 	if !df.Check() {
 		return
 	}
 
+	// Parameters for training the decision trees
+	MaxDepth = 5
+	MinLeaf = 1
+
 	// Create a decision tree to predict survival
-	MaxDepth = 10
-	MinLeaf = 5
 	tree := DecisionTree(df, "Survived", 0)
 	PrintTree(tree, 0)
 
@@ -198,13 +174,15 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 	}
 
 	// Show the best split found
-	fmt.Printf("Depth %2d: n = %d, best split on %s at ", level, df.NRows(), bestCol)
-	if len(bestSplitCat) > 0 {
-		fmt.Printf("\"%s\"", bestSplitCat)
-	} else {
-		fmt.Print(bestSplitNum)
+	if Verbose {
+		fmt.Printf("Depth %2d: n = %d, best split on %s at ", level, df.NRows(), bestCol)
+		if len(bestSplitCat) > 0 {
+			fmt.Printf("\"%s\"", bestSplitCat)
+		} else {
+			fmt.Print(bestSplitNum)
+		}
+		fmt.Println(" => Gini", bestGini)
 	}
-	fmt.Println(" => Gini", bestGini)
 
 	// Using the best split found, recursively do left and right sides
 	n := Node{SplitVar: bestCol, SplitNum: bestSplitNum, SplitCat: bestSplitCat, G: bestGini}

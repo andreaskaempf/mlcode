@@ -38,8 +38,10 @@ Sample usage (also see unit test file):
 
 ## Decision Tree
 
-Only does classification for now, using floating point columns in a dataframe,
-label has to be a string column. See example using Iris data set:
+Only does classification for now, using integer, floating point, or categorical
+(string) columns in a dataframe. The label you are training on has to be a string 
+column. See example using Iris data set (there is a second demo using the Titanic
+data set):
 
     // Build and train a tree
 	df, _rr := dataframe.ReadCSV("data/iris.csv")
@@ -49,6 +51,20 @@ label has to be a string column. See example using Iris data set:
 	// Make predictions
     row := df.GetRow(5)         // get dataframe with just row 5
     pred := Predict(tree, row) // returns predicted label
+
+## Random Forest
+
+Uses bagging (random sampling of data with replacement) to train a group
+of decision trees (no randomization of features yet), then predicts by
+taking the most common prediction from among the trees. Demo uses the
+Titanic data set. Sample usage:
+
+    // Create a random forest of 200 trees
+	forest := RandomForest(df, "Survived", 200)
+
+	// Make a prediction from one row
+    row := df.GetRow(5)
+    pred := RandomForestPredict(forest, row)
 
 ## Neural Network
 
