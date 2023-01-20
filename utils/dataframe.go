@@ -11,6 +11,8 @@ import (
 	"math"
 	"os"
 	"strconv"
+
+	"gonum.org/v1/gonum/mat"
 )
 
 // A data frame is just a list of columns
@@ -248,4 +250,39 @@ func (df *DataFrame) Check() bool {
 		}
 	}
 	return ok
+}
+
+// Convert numeric columns of a dataframe to a Gonum matrix
+func (df *DataFrame) ToMatrix() *mat.Dense {
+
+	// Extract just the numeric columns, into one long list
+	nrows := df.NRows()
+	cols := []Series{}
+	for _, c := range *df {
+		if c.Dtype == "float64" || c.Dtype == "int64" {
+			cols = append(cols, c)
+		}
+	}
+	if nrows == 0 || len(cols) == 0 {
+		fmt.Println("ToMatrix: dataframe has no rows or no numeric columns, cannot convert")
+		return nil
+	}
+
+	// Convert values to a long list of numbers, one row at a time
+	n := nrows * len(cols)        // number of cells
+	nums := make([]float64, n, n) // pre-allocate array
+	i := 0
+	for ri := 0; ri < nrows; ri++ {
+		for _, c := range cols {
+			if c.Dtype == "float64" {
+				nums[i] = c.Floats[ri]
+			} else {
+				nums[i] = float64(c.Ints[ri])
+			}
+			i++
+		}
+	}
+
+	// Convert to matrix
+	return mat.NewDense(nrows, len(cols), nums)
 }

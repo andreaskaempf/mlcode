@@ -16,9 +16,10 @@ package regression
 
 import (
 	"fmt"
-	"gonum.org/v1/gonum/mat"
 	"math"
 	"mlcode/utils"
+
+	"gonum.org/v1/gonum/mat"
 )
 
 // Structure for a logistic regression model
@@ -142,7 +143,10 @@ func (m *LogisticRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 func Logistic_Regression_Demo() {
 
 	// Read data into matrix, separate X and Y
-	data, _ := utils.ReadMatrixCSV("../data/police.txt")
+	df, _ := utils.ReadCSV("data/police.txt")
+	data := df.ToMatrix()
+
+	// Separate X and Y
 	X := utils.ExtractCols(data, 0, 2) // all cols except last
 	Y := utils.ExtractCols(data, 3, 3) // just the last col
 	fmt.Println("X =")

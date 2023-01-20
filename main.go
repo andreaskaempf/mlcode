@@ -15,7 +15,7 @@ import (
 func main() {
 
 	// Get selection from command line
-	arg := "dectree" // default if none provided
+	arg := "?" // default if none provided
 	//arg = "forest"
 	if len(os.Args) > 1 {
 		arg = os.Args[1]

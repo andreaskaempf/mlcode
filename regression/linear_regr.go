@@ -138,15 +138,17 @@ func (m *LinearRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 
 // Test/demo linear regression
 func Linear_Regression_Demo() {
-	//func main() {
 
-	// Read data, split into X & Y
-	data, _ := utils.ReadMatrixCSV("../data/pizza_3_vars.txt")
+	// Read data
+	df, _ := utils.ReadCSV("data/pizza_3_vars.txt")
+	data := df.ToMatrix()
+	utils.MatPrint(data)
+
+	// Split into X columns & Y column
 	X := utils.ExtractCols(data, 0, 2) // all cols except last
 	Y := utils.ExtractCols(data, 3, 3) // just the last col
 
 	// Create and train model
-	//w := trainLinRegr(X, Y, .001, .001, true)
 	m := LinearRegression{}
 	m.verbose = true
 	m.Train(X, Y)
