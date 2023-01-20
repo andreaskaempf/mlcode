@@ -25,9 +25,9 @@ func RandomForestDemo() {
 	MinLeaf = 1
 
 	// Train lots of trees, sampling data with replacement
-	nTrees := 200
+	nTrees := 2000
 	fmt.Println("Training", nTrees, "decision trees")
-	forest := RandomForest(df, "Survived", nTrees)
+	forest := RandomForest2(df, "Survived", nTrees)
 
 	// Make predictions, by predicting for each tree, then using most common value
 	fmt.Println("Making predictions")
@@ -52,15 +52,46 @@ func RandomForestDemo() {
 	fmt.Println(correct, "of", df.NRows(), "correct =", acc, "%")
 }
 
-// Create/train a random forest
+// Create/train a random forest, single threaded
 func RandomForest(df *utils.DataFrame, depv string, nTrees int) *Forest {
-	trees := Forest{} //[]*Node{}
+	trees := Forest{}
 	for i := 0; i < nTrees; i++ {
 		sample := SampleWithReplacement(df)
 		tree := DecisionTree(sample, depv, 0)
 		trees = append(trees, *tree)
 	}
 	return &trees
+}
+
+//  Create/train a random forest, with concurrency
+func RandomForest2(df *utils.DataFrame, depv string, nTrees int) *Forest {
+
+	// Initialize an empty forest
+	trees := Forest{}
+
+	// Create channel
+	ch := make(chan *Node)
+
+	// Launch all the trees in background
+	for i := 0; i < nTrees; i++ {
+		go createTree(df, depv, ch)
+	}
+
+	// Collect all the trees into a list
+	for i := 0; i < nTrees; i++ {
+		t := <-ch
+		trees = append(trees, *t)
+	}
+
+	// Return list of trees
+	return &trees
+}
+
+// Create a tree, for concurrent random forest creation
+func createTree(df *utils.DataFrame, depv string, ch chan *Node) {
+	sample := SampleWithReplacement(df)
+	tree := DecisionTree(sample, depv, 0)
+	ch <- tree
 }
 
 // Predict with a random forest
