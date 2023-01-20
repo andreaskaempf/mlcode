@@ -5,7 +5,6 @@ package decision_tree
 import (
 	"fmt"
 	"math/rand"
-	"mlcode/dataframe"
 	"mlcode/utils"
 )
 
@@ -54,7 +53,7 @@ func RandomForestDemo() {
 }
 
 // Create/train a random forest
-func RandomForest(df *dataframe.DataFrame, depv string, nTrees int) *Forest {
+func RandomForest(df *utils.DataFrame, depv string, nTrees int) *Forest {
 	trees := Forest{} //[]*Node{}
 	for i := 0; i < nTrees; i++ {
 		sample := SampleWithReplacement(df)
@@ -65,7 +64,7 @@ func RandomForest(df *dataframe.DataFrame, depv string, nTrees int) *Forest {
 }
 
 // Predict with a random forest
-func RandomForestPredict(forest *Forest, row *dataframe.DataFrame) string {
+func RandomForestPredict(forest *Forest, row *utils.DataFrame) string {
 
 	// Make a prediction with each tree
 	preds := []string{}
@@ -79,7 +78,7 @@ func RandomForestPredict(forest *Forest, row *dataframe.DataFrame) string {
 }
 
 // Sample a dataframe with replacement, resulting in same number of rows
-func SampleWithReplacement(df *dataframe.DataFrame) *dataframe.DataFrame {
+func SampleWithReplacement(df *utils.DataFrame) *utils.DataFrame {
 
 	// Start with an empty dataframe, same structure
 	df2 := df.CopyStructure()

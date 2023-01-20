@@ -2,14 +2,13 @@
 //
 // Very simple data frame implementation
 
-package dataframe
+package utils
 
 import (
 	"encoding/csv"
 	"errors"
 	"fmt"
 	"math"
-	"mlcode/utils"
 	"os"
 	"strconv"
 )
@@ -153,7 +152,7 @@ func (df *DataFrame) GetColumn(name string) *Series {
 func (df *DataFrame) DropColumns(names []string) *DataFrame {
 	df2 := DataFrame{}
 	for _, s := range *df {
-		if !utils.In(s.Name, names) {
+		if !In(s.Name, names) {
 			df2 = append(df2, s)
 		}
 	}

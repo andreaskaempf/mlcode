@@ -4,7 +4,6 @@ package decision_tree
 
 import (
 	"fmt"
-	"mlcode/dataframe"
 	"mlcode/utils"
 )
 
@@ -29,7 +28,7 @@ var Verbose = false // whether to show progress messages
 func DecisionTreeDemo() {
 
 	// Read Iris data set from CSV file
-	df, err := dataframe.ReadCSV("data/iris.csv")
+	df, err := utils.ReadCSV("data/iris.csv")
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +92,7 @@ func DecisionTreeDemo2() {
 }
 
 // Create decision tree, recursively, returns top-level node
-func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
+func DecisionTree(df *utils.DataFrame, depv string, level int) *Node {
 
 	// Terminate with a leaf node it:
 	// 1. too few rows left
@@ -110,7 +109,7 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 	var bestSplitNum float64 // value if numeric split
 	var bestSplitCat string  // value if categorical split
 	var bestGini float64 = 1
-	var bestLeft, bestRight *dataframe.DataFrame
+	var bestLeft, bestRight *utils.DataFrame
 	for _, c := range *df {
 
 		// Skip the dependent variable
@@ -193,7 +192,7 @@ func DecisionTree(df *dataframe.DataFrame, depv string, level int) *Node {
 
 // Split a dataframe on a numeric (float) column, into two dataframes,
 // at the given split value
-func splitNumeric(df dataframe.DataFrame, colName string, split float64) (*dataframe.DataFrame, *dataframe.DataFrame) {
+func splitNumeric(df utils.DataFrame, colName string, split float64) (*utils.DataFrame, *utils.DataFrame) {
 
 	// Make two empty dataframes with same columns
 	left := df.CopyStructure()
@@ -227,7 +226,7 @@ func splitNumeric(df dataframe.DataFrame, colName string, split float64) (*dataf
 
 // Split a dataframe on a categorical (string) column, into two dataframes,
 // left for equal, right for not equal
-func splitCategorical(df dataframe.DataFrame, colName string, split string) (*dataframe.DataFrame, *dataframe.DataFrame) {
+func splitCategorical(df utils.DataFrame, colName string, split string) (*utils.DataFrame, *utils.DataFrame) {
 
 	// Make two empty dataframes with same columns
 	left := df.CopyStructure()
@@ -247,7 +246,7 @@ func splitCategorical(df dataframe.DataFrame, colName string, split string) (*da
 }
 
 // Predict from a decision tree, return predicted label
-func Predict(tree *Node, row *dataframe.DataFrame) string {
+func Predict(tree *Node, row *utils.DataFrame) string {
 
 	// Terminal node is the prediction
 	if len(tree.Value) > 0 {

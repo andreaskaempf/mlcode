@@ -5,17 +5,16 @@
 package decision_tree
 
 import (
-	"mlcode/dataframe"
 	"mlcode/utils"
 )
 
 // Read and prepare the Titanic data set
-func GetTitanicData(filename string) *dataframe.DataFrame {
+func GetTitanicData(filename string) *utils.DataFrame {
 
 	// Read Titanic data set from CSV file
-	dataframe.MISSING_INT = -1
-	dataframe.MISSING_FLOAT = -1.0
-	df, err := dataframe.ReadCSV(filename)
+	utils.MISSING_INT = -1
+	utils.MISSING_FLOAT = -1.0
+	df, err := utils.ReadCSV(filename)
 	if err != nil {
 		panic(err)
 	}
