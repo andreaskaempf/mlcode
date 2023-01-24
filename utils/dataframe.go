@@ -139,7 +139,7 @@ func (df *DataFrame) NRows() int {
 	}
 }
 
-// Get one column from a dataframe
+// Get one column from a dataframe, returns pointer to existing series
 func (df *DataFrame) GetColumn(name string) *Series {
 	for i := 0; i < len(*df); i++ {
 		s := &(*df)[i]
@@ -148,6 +148,18 @@ func (df *DataFrame) GetColumn(name string) *Series {
 		}
 	}
 	return nil
+}
+
+// Get one or more columns from a dataframe, returns a new dataframe
+func (df *DataFrame) GetColumns(names []string) *DataFrame {
+	df2 := DataFrame{}
+	for i := 0; i < len(*df); i++ {
+		s := &(*df)[i]
+		if In(s.Name, names) {
+			df2 = append(df2, *s)
+		}
+	}
+	return &df2
 }
 
 // Drop one or more columns from a dataframe (returns new copy)

@@ -9,6 +9,7 @@ import (
 	"mlcode/decision_tree"
 	"mlcode/neural_net"
 	"mlcode/regression"
+	"mlcode/svm"
 	"os"
 )
 
@@ -16,7 +17,7 @@ func main() {
 
 	// Get selection from command line
 	arg := "?" // default if none provided
-	//arg = "forest"
+	arg = "svm"
 	if len(os.Args) > 1 {
 		arg = os.Args[1]
 	}
@@ -37,7 +38,10 @@ func main() {
 	} else if arg == "forest" {
 		fmt.Println("Running random forest demo (titanic)")
 		decision_tree.RandomForestDemo()
+	} else if arg == "svm" {
+		fmt.Println("Running SVM demo")
+		svm.SVMDemo()
 	} else {
-		fmt.Println("Specify: linear, logistic, neural, dectree, or forest")
+		fmt.Println("Specify: linear, logistic, neural, dectree, forest, or svm")
 	}
 }
