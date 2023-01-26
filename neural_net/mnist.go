@@ -1,4 +1,4 @@
-// Functions to read MNIST digits data.  The data files can be
+// Demo of the neural network, using MNIST digits data. The data files can be
 // downloaded from http://yann.lecun.com/exdb/mnist/
 // and should be stored in data/mnist under the current directory,
 // in their original gzipped state.
@@ -35,16 +35,18 @@ func MnistDemo() {
 
 	// For binary classifier, convert labels to 1 if 5 or 0 otherwise
 	// labs[i] = ifThenElse(labs[i] == 5, 1, 0)
+	// Uncomment this to do the binary classification
 	/*labs1 := mat.NewDense(len(labs), 1, nil)
 	for i := 0; i < len(labs); i++ {
 		if labs[i] == 5 {
 			labs1.Set(i, 0, 1)
 		}
-	}*/
+	}
 
 	// Create and train binary logistic regression model,
 	//m := LogisticRegression{iterations: 100, lr: .00001, verbose: true}
 	//m.train(pics1, labs1)
+	*/
 
 	// Train multi-class classifier using 10-column one-hot encoded labels
 	m := regression.MultiLogRegression{Iterations: 100, LR: 1e-5, Verbose: true}

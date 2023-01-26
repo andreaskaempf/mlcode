@@ -3,7 +3,7 @@
 // Based on Python implementation in Chapters 2-4 of "Programming Machine
 // Learning" by Paolo Perrotta.
 //
-// Sample usage (also see unit test file):
+// Sample usage (see demo in separate file):
 // m := LinearRegression{}   // create model
 // m.verbose = true  // set flag (also lr, iterations, tol)
 // m.train(X, Y)   // train the  model
@@ -15,7 +15,6 @@ package regression
 import (
 	"fmt"
 	"math"
-	"mlcode/utils"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -134,31 +133,4 @@ func (m *LinearRegression) Gradient(X, Y *mat.Dense) *mat.Dense {
 	// Python: 2 * ... / X.shape[0]
 	res.Scale(2.0/float64(xr), res)
 	return res
-}
-
-// Test/demo linear regression
-func Linear_Regression_Demo() {
-
-	// Read data
-	df, _ := utils.ReadCSV("data/pizza_3_vars.txt")
-	data := df.ToMatrix()
-	utils.MatPrint(data)
-
-	// Split into X columns & Y column
-	X := utils.ExtractCols(data, 0, 2) // all cols except last
-	Y := utils.ExtractCols(data, 3, 3) // just the last col
-
-	// Create and train model
-	m := LinearRegression{}
-	m.verbose = true
-	m.Train(X, Y)
-
-	// Show coefficients
-	fmt.Println("Final weights")
-	utils.MatPrint(m.w) // prints final coefficients
-
-	// Make prediction
-	preds := m.Predict(X)
-	fmt.Println("Predictions:")
-	utils.MatPrint(preds)
 }

@@ -4,7 +4,6 @@
 package neural_net
 
 import (
-	//"fmt"
 	"math"
 
 	"gonum.org/v1/gonum/mat"
