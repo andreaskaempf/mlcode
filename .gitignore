@@ -2,3 +2,4 @@ go.sum
 data/mnist
 mlcode
 books
+*.png

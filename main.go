@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"mlcode/cluster"
 	"mlcode/decision_tree"
 	"mlcode/neural_net"
 	"mlcode/regression"
@@ -16,7 +17,7 @@ import (
 func main() {
 
 	// Get selection from command line
-	arg := "svm" // default if none provided
+	arg := "kmeans" // default if none provided
 	if len(os.Args) > 1 {
 		arg = os.Args[1]
 	}
@@ -40,7 +41,10 @@ func main() {
 	} else if arg == "svm" {
 		fmt.Println("Running SVM demo")
 		svm.SVMDemo()
+	} else if arg == "kmeans" {
+		fmt.Println("Running KMeans demo")
+		cluster.KMeansDemo()
 	} else {
-		fmt.Println("Specify: linear, logistic, neural, dectree, forest, or svm")
+		fmt.Println("Specify: linear, logistic, neural, dectree, forest, svm, or kmeans")
 	}
 }

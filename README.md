@@ -1,14 +1,12 @@
 # Machine learning and data science in Go
 
 This is a simple machine learning library in Go, which uses gonum for matrices.
-It is a set of focused utility classes, and not intended to replace golearn,
-goml, or other mature Go libraries.
+It is a set of focused utility classes with demonstration functions, and not
+intended to replace golearn, goml, or other mature Go libraries.
 
-For now, it only handles data in numeric (float64) matrices, and there are utility
-functions in matrices.go to read CSV files and extract columns (see examples below).
+A simple DataFrame implementation is included, to read CSV files and allow
+for categorical variables (decision trees and random forest only).
 
-For the decision tree, I added a simple DataFrame implementation, and will probably
-move the other algorithms over to this in time.
 
 ## Linear Regression
 
@@ -85,6 +83,22 @@ See demo function in svm.go, usage as follows:
 	nr, _ := X.Dims()
 	preds := mat.NewVecDense(nr, nil)
 	preds.MulVec(X, W)
+
+## K-Means Clustering
+
+Implementation based on my recollection of the algorithm. Clusters are
+initialized randomly, then centroids calculated and rows assigned to the
+cluster with the nearest centroid, repeatedly until there is no movement. Demo
+creates a colour-coded scatterplot, using GoNum's plot library. Should work
+with any number of dimensions, demo uses only two.  You pass it a dataframe,
+and it uses all available numeric columns.
+
+Sample usage:
+
+
+	// Read a data set and divide it into 5 clusters
+	df, _ := utils.ReadCSV("clusters2D.csv")
+	clusters := KMeans(df, 5) // returns slice of cluster numbers
 
 
 ## Neural Network
