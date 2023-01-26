@@ -1,7 +1,14 @@
+// svm.go
+//
+// Support vector machine implementation, based mainly on:
 // https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2
+//
+// Also useful:
 // https://www.mltut.com/svm-implementation-in-python-from-scratch/
 // https://towardsdatascience.com/the-kernel-trick-c98cdbcaeb3f
 // https://www.kaggle.com/code/prathameshbhalekar/svm-with-kernel-trick-from-scratch
+//
+// AK, 26/01/2023
 
 package svm
 
@@ -12,6 +19,12 @@ import (
 
 	"gonum.org/v1/gonum/mat"
 )
+
+// Global hyperparameters
+var maxIterations int = 5000
+var regularizationStrength float64 = 10000
+var learningRate float64 = 0.000001
+var costThreshold float64 = 0.01 // stop when improvement less than this fraction
 
 // Demo of Support Vector Machine Model, using breast cancer data set
 func SVMDemo() {
@@ -35,9 +48,9 @@ func SVMDemo() {
 	// Remove the ID and diagnosis column from the dataframe
 	feats := df.DropColumns([]string{"id", "diagnosis"})
 
-	// Normalize X values, between zero and one (TODO: Normalize Y?)
+	// Normalize X values, between zero and one
 	for i := 0; i < len(*feats); i++ {
-		normalize(&(*feats)[i].Floats)
+		utils.Normalize(&(*feats)[i].Floats)
 	}
 
 	// Add an intercept column
@@ -57,56 +70,58 @@ func SVMDemo() {
 	dfY := utils.DataFrame{}
 	dfY = append(dfY, *diag)
 	Y := dfY.ToMatrix()
-	//utils.MatPrint(X)
-	//utils.MatPrint(Y)
 
-	// Train the  model
-	// W = sgd(X_train.to_numpy(), y_train.to_numpy())
+	// Train the model, returns final weights
 	W := sgd(X, Y)
-	utils.MatPrint(W)
+
+	// Make predictions and compare accuracy
+	nr, _ := X.Dims()
+	preds := mat.NewVecDense(nr, nil)
+	preds.MulVec(X, W)
+
+	// Measure accuracy
+	ok := 0
+	for i := 0; i < nr; i++ {
+		if utils.SameSign(preds.AtVec(i), Y.At(i, 0)) {
+			ok++
+		}
+	}
+	fmt.Println("Accuracy =", float64(ok)/float64(nr))
 }
 
-// Global hyperparameters
-var maxEpochs int = 5000
-var regularizationStrength float64 = 10000
-var learningRate float64 = 0.000001
-var costThreshold float64 = 0.01 // stop when improvement less than this fraction
+// Train model using stochastic gradient descent
+func sgd(X, Y *mat.Dense) *mat.VecDense {
 
-// Train stochastic gradient descent
-func sgd(X, Y *mat.Dense) *mat.Dense {
-
-	// Initialize weights as zeros
+	// Initialize weights as a vector of zeros
 	nr, nc := X.Dims()
 	W := mat.NewVecDense(nc, nil)
+	fmt.Printf("Initial cost = %f\n", computeCost(W, X, Y))
 
 	// Iterate until no more improvement, or maximum iterations
 	prevCost := math.MaxFloat64
-	for epoch := 1; epoch <= maxEpochs; epoch++ {
+	for iter := 1; iter <= maxIterations; iter++ {
 
+		// Do each row, keep adjusting weights
 		// TODO: X, Y = shuffle(features, outputs)
-
-		// Do each row
 		for i := 0; i < nr; i++ {
 
+			// Get gradient for this row
 			x := X.RowView(i) // mat.Vector
 			y := Y.At(i, 0)   // float64
-			ascent := calculateCostGradient(W, x, y)
+			ascent := calculateCostGradient(W, &x, y)
 
-			// W = W - (learningRate * ascent)
-			ascent.Scale(learningRate, ascent)
-			W.Sub(W, ascent)
+			// Python: W = W - (learningRate * ascent)
+			ascent.ScaleVec(learningRate, ascent)
+			W.SubVec(W, ascent)
 		}
 
-		// Stop when converged
+		// Stop when converged, i.e., no more improvement
 		cost := computeCost(W, X, Y)
-		fmt.Printf("Epoch %d: cost = %f\n", epoch, cost)
+		fmt.Printf("Iteration %d: cost = %f\n", iter, cost)
 		if math.Abs(prevCost-cost) < costThreshold*prevCost {
 			break
 		}
 		prevCost = cost
-
-		// DEBUG: Stop after one iteration
-		break
 	}
 
 	// Return final weights
@@ -114,48 +129,45 @@ func sgd(X, Y *mat.Dense) *mat.Dense {
 }
 
 // Compute cost gradient for training SVM
-func calculateCostGradient(W *mat.Dense, x mat.Vector, y float64) *mat.Dense {
+// Assumes X and W are vectors (one row), Y is one number
+func calculateCostGradient(W *mat.VecDense, x *mat.Vector, y float64) *mat.VecDense {
 
-	// distance = 1 - (Y_batch * np.dot(X_batch, W))
-	_, nc := x.Dims() // x and W both 31 x 1
-	dist := mat.NewDense(1, nc, nil)
-	dist.Mul(x.T(), W)
-	dist.Scale(y, dist)
-	dist.Apply(func(i, j int, v float64) float64 {
-		return 1 - v
-	}, dist)
+	// Calculate total distance
+	// Python: d = 1 - (Y * np.sum(X * W))
+	// was: distance = 1 - (Y_batch * np.dot(X_batch, W))
+	nc := (*x).Len()
+	var dist float64
+	for i := 0; i < nc; i++ { // equivalent to: Y * np.sum(X * W)
+		dist += W.AtVec(i) * (*x).AtVec(i) * y
+	}
+	if dist < 1 {
+		dist = 1 - dist
+	} else {
+		dist = 0
+	}
 
+	// Calculate dw
 	// dw = np.zeros(len(W))
-	wr, _ := W.Dims()
-	dw := mat.NewDense(wr, 1, nil) // 31 x 1
+	// if dist > 0:
+	//     dw = W - (regularization_strength * Y * X)
+	dw := mat.NewVecDense(nc, nil) // 31 x 1
+	if dist > 0 {                  // dist no longer used!
+		for i := 0; i < nc; i++ {
+			dw.SetVec(i, W.AtVec(i)-regularizationStrength*y*(*x).AtVec(i))
+		}
+	}
 
-	//for ind, d in enumerate(distance):
-	//    if max(0, d) == 0:  // i.e., d < 0
-	//        di = W
-	//    else:
-	//        di = W - (regularization_strength * Y_batch[ind] * X_batch[ind])
-	//    dw += di
-
-	//dw = dw/len(Y_batch)  # average
+	// Return a vector of weight differences
 	return dw
 }
 
 // Compute cost for SVM
-// W (30,) X (455, 30) Y (455,) distances (455,)
-func computeCost(W, X, Y *mat.Dense) float64 {
-
-	//showDims("W", W) // 1 x 569
-	//showDims("X", X) // 569 x 31
-	//showDims("Y", Y) // 569 x 1
+func computeCost(W *mat.VecDense, X, Y *mat.Dense) float64 {
 
 	// Calculate distances
 	// Python: distances = 1 - Y * np.dot(X, W)
-	//    np.dot(X, W) => (455,)
-	//    Y * "        => (455,)
-	//    1 - "        => (455,)
 	// distances[distances < 0] = 0  # i.e., max(0, distance)
-
-	nr, nc := X.Dims() // 569, 31
+	nr, nc := X.Dims()
 	dist := mat.NewDense(nr, 1, nil)
 	dist.Mul(X, W)
 	dist.MulElem(Y, dist)
@@ -167,66 +179,21 @@ func computeCost(W, X, Y *mat.Dense) float64 {
 		}
 	}, dist)
 
-	// sumDistances= np.sum(distances)
+	// Python: sumDistances = np.sum(distances)
 	var sumDist float64
-	//showDims("dist", dist)
 	for i := 0; i < nr; i++ {
 		sumDist += dist.At(i, 0)
 	}
 
-	// Calculate hinge loss
-	// N = X.shape[0]
-	// hinge_loss = regularization_strength * (sumDistances / N)
-	hingeLoss := regularizationStrength * (sumDist / float64(nr))
-
-	// Calculate cost
-	// cost = 1 / 2 * np.dot(W, W) + hinge_loss
+	// Calculate dot(W, W)
 	var cost float64 = 0
-	//showDims("W", W)
 	for c := 0; c < nc; c++ {
-		w := W.At(c, 0)
+		w := W.AtVec(c)
 		cost += w * w
 	}
-	cost += hingeLoss
-	return cost / 2
-}
 
-func showDims(name string, X *mat.Dense) {
-	nr, nc := X.Dims()
-	fmt.Printf("%s: %d x %d\n", name, nr, nc)
-}
-func showDimsV(name string, X mat.Vector) {
-	nr, nc := X.Dims()
-	fmt.Printf("%s: %d x %d\n", name, nr, nc)
-}
-
-// Normalize a list of floats between 0 and 1, in-place
-func normalize(nums *[]float64) {
-	mn := min(*nums)
-	mx := max(*nums)
-	for i := 0; i < len(*nums); i++ {
-		(*nums)[i] = ((*nums)[i] - mn) / (mx - mn)
-	}
-}
-
-// Minimum of a list
-func min[T int | int64 | float64 | string](list []T) T {
-	res := list[0]
-	for i := 1; i < len(list); i++ {
-		if list[i] < res {
-			res = list[i]
-		}
-	}
-	return res
-}
-
-// Maximum of a list
-func max[T int | int64 | float64 | string](list []T) T {
-	res := list[0]
-	for i := 1; i < len(list); i++ {
-		if list[i] > res {
-			res = list[i]
-		}
-	}
-	return res
+	// Calculate cost
+	// Python: cost = 1 / 2 * np.dot(W, W) + hinge_loss
+	hingeLoss := regularizationStrength * (sumDist / float64(nr))
+	return cost/2 + hingeLoss
 }

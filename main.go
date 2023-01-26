@@ -16,8 +16,7 @@ import (
 func main() {
 
 	// Get selection from command line
-	arg := "?" // default if none provided
-	arg = "svm"
+	arg := "svm" // default if none provided
 	if len(os.Args) > 1 {
 		arg = os.Args[1]
 	}

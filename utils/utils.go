@@ -111,12 +111,48 @@ func MostCommon[T int | int64 | float64 | byte | string](ss []T) T {
 }
 
 // Determine if all elements in a list are the same
-func allSame[T int | int64 | float64 | byte | string](labels []T) bool {
+func AllSame[T int | int64 | float64 | byte | string](labels []T) bool {
 	classCount := map[T]int{}
 	for _, l := range labels {
 		classCount[l]++
 	}
 	return len(classCount) == 1
+}
+
+// Normalize a list of floats between 0 and 1, in-place
+func Normalize(nums *[]float64) {
+	mn := Min(*nums)
+	mx := Max(*nums)
+	for i := 0; i < len(*nums); i++ {
+		(*nums)[i] = ((*nums)[i] - mn) / (mx - mn)
+	}
+}
+
+// Minimum of a list
+func Min[T int | int64 | float64 | string](list []T) T {
+	res := list[0]
+	for i := 1; i < len(list); i++ {
+		if list[i] < res {
+			res = list[i]
+		}
+	}
+	return res
+}
+
+// Maximum of a list
+func Max[T int | int64 | float64 | string](list []T) T {
+	res := list[0]
+	for i := 1; i < len(list); i++ {
+		if list[i] > res {
+			res = list[i]
+		}
+	}
+	return res
+}
+
+// Are two numbers the same sign?
+func SameSign(a, b float64) bool {
+	return (a >= 0 && b >= 0) || (a < 0 && b < 0)
 }
 
 // Panic if a test condition is not true

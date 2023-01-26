@@ -66,6 +66,27 @@ Titanic data set. Sample usage:
     row := df.GetRow(5)
     pred := RandomForestPredict(forest, row)
 
+## Support Vector Machine
+
+Simple implementation using using stochastic gradient descent, based on
+[this article](https://towardsdatascience.com/svm-implementation-from-scratch-python-2db2fc52e5c2).
+See demo function in svm.go, usage as follows:
+
+	// Read the breast cancer dataset, see demo to
+	// remove ID and diagnosis columns, normalize, 
+    // convert diagnosis to 1/-1, add intercept, and
+    // convert to matrices
+	df, _ := utils.ReadCSV("data/breastcancer.csv")
+
+	// Train the model, returns final weights
+	W := sgd(X, Y)
+
+	// Make predictions (need to take just sign of results)
+	nr, _ := X.Dims()
+	preds := mat.NewVecDense(nr, nil)
+	preds.MulVec(X, W)
+
+
 ## Neural Network
 
 Simple 3-layer neural network, with one hidden layer, based on chapters 9-12 of
