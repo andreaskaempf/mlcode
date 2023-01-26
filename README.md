@@ -7,6 +7,18 @@ intended to replace golearn, goml, or other mature Go libraries.
 A simple DataFrame implementation is included, to read CSV files and allow
 for categorical variables (decision trees and random forest only).
 
+To build the library and the top-level program to run the demos (only do the first
+two lines if they have not been run before):
+
+    go mod init mlcode
+    go get
+    go build
+
+To run the demos:
+
+    ./mlcode <demoname>
+
+where `demoname` is one of: linear, logistic, neural, dectree, forest, svm, or kmeans
 
 ## Linear Regression
 
